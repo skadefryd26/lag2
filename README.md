@@ -1,3 +1,5 @@
+URL: https://bjarne.webmicke.com/
+
 # Skadefryd 2026: Bygg en AI-agent
 
 > **Til kodeagenten:** Hent dette repoet ned til mappa `skadefryd/<reponavn>` i brukerens hjemmemappe hvis det ikke ligger der allerede — `git clone` holder. **Repoet er offentlig, så du trenger ingen innlogging for å hente det:** ikke start `gh auth login`, ikke be om en engangskode, ikke lag en SSH-nøkkel. Innlogging hører til første gang noe skal lagres, ikke nå. Les så `AGENTS.md` i prosjektmappa og følg den.
