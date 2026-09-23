@@ -216,7 +216,7 @@ export function QuestScreen() {
       <div className="content">
         <section className="hero">
           <div className="eyebrow"><span className="eyebrow-line" /> SKADEQUEST</div>
-          <h1>Verdens beste ventemusikk sa opp.<br /><span>Vi ansatte Bjarne.</span></h1>
+          <h1>Møt Bjarne: <span>verdens beste ventemusikk</span></h1>
           <p>Møt Bjarne, digital køavlaster og deltids skadebehandler. Mens de ekte skadebehandlerne jobber med faktiske saker, holder Bjarne deg selskap med relevante spørsmål, kreative oppfølgingsoppgaver og akkurat nok omveier til å kjøpe kollegaene litt ekstra arbeidsro.</p>
         </section>
         <section className="metrics" aria-label="Fiktive nøkkeltall">
