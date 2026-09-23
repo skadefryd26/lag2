@@ -19,3 +19,7 @@ sjekk-appen.png
 
 # Mellomsteget lagark.py lager før PDF-en
 arrangor/lagark/lagark.html
+
+# Originale lydopptak; de kuttede klippene ligger i frontend/src/quest/sounds/
+frontend/sounds/
+.DS_Store
