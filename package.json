@@ -1,12 +1,13 @@
 {
   "name": "skadequest",
   "private": true,
-  "workspaces": [
-    "backend"
-  ],
+  "workspaces": ["frontend", "backend"],
   "scripts": {
-    "dev": "npm run dev -w backend",
-    "build": "npm run build -w backend",
+    "dev": "node scripts/dev.mjs",
+    "build": "npm run build -w frontend && npm run build -w backend",
     "test": "npm test -w backend"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.63.0"
   }
 }
