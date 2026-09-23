@@ -18,7 +18,7 @@ const theme = createTheme({
   fontFamily: '"DM Sans", sans-serif',
   headings: { fontFamily: '"DM Sans", sans-serif' },
   primaryColor: 'violet',
-  colors: { violet: ['#f2eeff', '#e5ddff', '#d5c5ff', '#b9a0ff', '#9677ff', '#7c55ff', '#6325e7', '#4d19c0', '#38129b', '#280c76'] },
+  colors: { violet: ['#ffffff', '#ffffff', '#f4ffaf', '#f4ffaf', '#7c55ff', '#7c55ff', '#7c55ff', '#7c55ff', '#090c33', '#090c33'] },
 });
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

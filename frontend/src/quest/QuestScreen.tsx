@@ -219,6 +219,12 @@ export function QuestScreen() {
           <h1>En skade å melde.<br /><span>En AI som helst vil slippe.</span></h1>
           <p>Møt Bjarne, din digitale skadebehandler. Svært kompetent. Lett kaffetørst. Urovekkende god på å finne nye spørsmål.</p>
         </section>
+        <section className="metrics" aria-label="Fiktive nøkkeltall">
+          <div className="metric"><span className="metric-icon">☕</span><div><small>Kaffenivå</small><strong>{coffee}%</strong></div><span className="metric-note">KRITISK VIKTIG</span><div className="metric-meter"><i style={{ width: `${coffee}%` }} /></div></div>
+          <div className="metric"><span className="metric-icon">↗</span><div><small>Kollegaer reddet fra telefonkø</small><strong>{Math.floor(history.length / 2) + 3}</strong></div><span className="metric-note">I DAG, VISSTNOK</span></div>
+          <div className="metric"><span className="metric-icon">▤</span><div><small>Skjemaer utsatt</small><strong>{Math.floor(history.length / 2) + 12}</strong></div><span className="metric-note">EFFEKTIVISERING</span></div>
+          <div className="metric"><span className="metric-icon">◎</span><div><small>Risiko for faktisk arbeid</small><strong>{history.length ? '18' : '7'}<span className="metric-percent">%</span></strong></div><span className="metric-note">UNDER KONTROLL</span></div>
+        </section>
         <section className="workspace" aria-label="Samtale med Bjarne">
           <div className="call-card">
             <div className="call-head"><span><span className="online-dot" /> SAMTALEN ER ÅPEN</span><span className="round-status">{completed ? 'RUNDE FULLFØRT' : 'INGEN SAK OPPRETTET'}</span></div>
@@ -261,12 +267,6 @@ export function QuestScreen() {
           </div>
         </section>
         <div className="intro-note demo-note"><span aria-hidden="true">ⓘ</span> Dette er et spill: Bruk bare oppdiktede skader og personer. Ingen virkelig skademelding sendes.</div>
-        <section className="metrics" aria-label="Fiktive nøkkeltall">
-          <div className="metric"><span className="metric-icon">☕</span><div><small>Kaffenivå</small><strong>{coffee}%</strong></div><span className="metric-note">KRITISK VIKTIG</span><div className="metric-meter"><i style={{ width: `${coffee}%` }} /></div></div>
-          <div className="metric"><span className="metric-icon">↗</span><div><small>Kollegaer reddet fra telefonkø</small><strong>{Math.floor(history.length / 2) + 3}</strong></div><span className="metric-note">I DAG, VISSTNOK</span></div>
-          <div className="metric"><span className="metric-icon">▤</span><div><small>Skjemaer utsatt</small><strong>{Math.floor(history.length / 2) + 12}</strong></div><span className="metric-note">EFFEKTIVISERING</span></div>
-          <div className="metric"><span className="metric-icon">◎</span><div><small>Risiko for faktisk arbeid</small><strong>{history.length ? '18' : '7'}<span className="metric-percent">%</span></strong></div><span className="metric-note">UNDER KONTROLL</span></div>
-        </section>
         <footer><span>✳ Skadequest — helt fiktiv forsikring, helt ekte sukk.</span><span>INGEN VIRKELIGE SAKER OPPRETTES HER</span></footer>
       </div>
     </main>
