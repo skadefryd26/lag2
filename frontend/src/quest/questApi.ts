@@ -7,7 +7,7 @@ export async function sendQuest(message: string, history: Turn[], stage: number)
     response = await fetch('/api/quest', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message, history, stage }),
+      body: JSON.stringify({ message, history: history.slice(-20), stage }),
     });
   } catch {
     throw new Error('Jeg får ikke kontakt med Bjarne akkurat nå. Prøv igjen om litt.');
