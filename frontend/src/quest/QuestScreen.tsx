@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Button, Textarea } from '@mantine/core';
 import { useMutation } from '@tanstack/react-query';
-import { sendQuest, type Turn } from './questApi';
+import { sendHandoff, sendQuest, type Turn } from './questApi';
 import { Waveform, useMicrophoneLevel } from './VoiceDisplay';
+import { peopleAhead, QUEUE_START } from './queue';
 
 type Recognition = {
   lang: string;
@@ -26,14 +27,16 @@ function getRecognition(): RecognitionConstructor | undefined {
   return speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
 }
 
-function say(text: string, onStart: () => void, onEnd: () => void) {
-  if (!('speechSynthesis' in window)) return;
+function say(text: string, onStart: () => void, onEnd: () => void, speaker: 'bjarne' | 'kollega' = 'bjarne') {
+  if (!('speechSynthesis' in window)) { onEnd(); return; }
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = 'nb-NO';
   utterance.rate = 0.96;
   const norwegian = window.speechSynthesis.getVoices().find(voice => voice.lang.toLowerCase().startsWith('nb'));
-  if (norwegian) utterance.voice = norwegian;
+  const voices = window.speechSynthesis.getVoices().filter(voice => voice.lang.toLowerCase().startsWith('nb'));
+  utterance.voice = speaker === 'kollega' ? voices[1] ?? voices[0] ?? null : norwegian ?? null;
+  if (speaker === 'kollega') utterance.rate = 1.08;
   utterance.onstart = onStart;
   utterance.onend = onEnd;
   utterance.onerror = onEnd;
@@ -49,29 +52,84 @@ export function QuestScreen() {
   const [stopping, setStopping] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const [speechError, setSpeechError] = useState('');
+  const [queueAhead, setQueueAhead] = useState(QUEUE_START);
+  const [queueStarted, setQueueStarted] = useState(false);
+  const [consulted, setConsulted] = useState(false);
+  const [transferring, setTransferring] = useState(false);
   const recognition = useRef<Recognition | null>(null);
+  const queueStart = useRef<number | null>(null);
+  const playbackId = useRef(0);
   const silenceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const finishRecording = useRef<(() => void) | null>(null);
   const conversation = useRef<HTMLDivElement>(null);
   const { level, elapsed } = useMicrophoneLevel(listening);
   const coffee = Math.max(12, 86 - history.length * 9);
   const supported = typeof window !== 'undefined' && !!getRecognition();
+  const handoff = useMutation({
+    mutationFn: (phase: 'consult' | 'transfer') => sendHandoff(phase, history),
+    onSuccess: (result, phase) => {
+      const turns: Turn[] = result.turns.map(turn => ({ role: 'assistant', content: turn.reply, speaker: turn.speaker }));
+      const currentPlayback = ++playbackId.current;
+      setHistory(previous => [...previous, turns[0]]);
+      setSpeaking(true);
+      if (phase === 'transfer') {
+        setTransferring(true);
+        say(turns[0].content, () => setSpeaking(true), () => {
+          if (playbackId.current !== currentPlayback) return;
+          setHistory(previous => [...previous, turns[1]]);
+          setCompleted(true);
+          setTransferring(false);
+          setSpeaking(false);
+          say(turns[1].content, () => setSpeaking(true), () => setSpeaking(false), 'kollega');
+        });
+      } else {
+        setConsulted(true);
+        say(turns[0].content, () => setSpeaking(true), () => {
+          if (playbackId.current === currentPlayback) setSpeaking(false);
+        });
+      }
+    },
+  });
   const quest = useMutation({
     mutationFn: (message: string) => sendQuest(message, history, stage),
     onSuccess: (result, message) => {
-      setHistory(previous => [...previous, { role: 'user', content: message }, { role: 'assistant', content: result.reply }]);
+      setHistory(previous => [...previous, { role: 'user', content: message }, { role: 'assistant', content: result.reply, speaker: 'bjarne' }]);
+      if (queueStart.current === null) { queueStart.current = Date.now(); setQueueStarted(true); }
       setStage(result.stage);
       setCompleted(result.completed);
       setDraft('');
+      setSpeaking(true);
       say(result.reply, () => setSpeaking(true), () => setSpeaking(false));
     },
   });
-  const phase = listening ? 'recording' : speaking ? 'speaking' : quest.isPending ? 'thinking' : 'idle';
+  const currentSpeaker = history.filter(turn => turn.role === 'assistant').at(-1)?.speaker ?? 'bjarne';
+  const phase = listening ? 'recording' : speaking ? 'speaking' : quest.isPending || handoff.isPending ? 'thinking' : 'idle';
+
+  useEffect(() => {
+    if (!queueStarted || completed) return;
+    const tick = () => {
+      if (queueStart.current !== null) setQueueAhead(peopleAhead((Date.now() - queueStart.current) / 1000));
+    };
+    tick();
+    const timer = window.setInterval(tick, 250);
+    return () => window.clearInterval(timer);
+  }, [queueStarted, completed]);
+
+  useEffect(() => {
+    if (queueStarted && queueAhead === 0 && listening) finishRecording.current?.();
+  }, [queueStarted, queueAhead, listening]);
+
+  useEffect(() => {
+    if (!queueStarted || completed || transferring || quest.isPending || handoff.isPending || handoff.isError || speaking || listening || stopping) return;
+    if (queueAhead <= 3 && !consulted) handoff.mutate('consult');
+    else if (queueAhead === 0) handoff.mutate('transfer');
+  }, [queueAhead, queueStarted, completed, transferring, consulted, quest.isPending, handoff.isPending, handoff.isError, speaking, listening, stopping]);
 
   useEffect(() => {
     conversation.current?.scrollTo({ top: conversation.current.scrollHeight, behavior: 'smooth' });
-  }, [history, quest.isPending]);
+  }, [history, quest.isPending, handoff.isPending]);
   useEffect(() => () => {
+    playbackId.current++;
     if (silenceTimer.current) clearTimeout(silenceTimer.current);
     finishRecording.current = null;
     const session = recognition.current;
@@ -83,7 +141,7 @@ export function QuestScreen() {
 
   function submit(text = draft) {
     const trimmed = text.trim();
-    if (!trimmed || quest.isPending || completed) return;
+    if (!trimmed || quest.isPending || handoff.isPending || transferring || completed || queueAhead === 0) return;
     setSpeechError('');
     quest.reset();
     quest.mutate(trimmed);
@@ -97,7 +155,7 @@ export function QuestScreen() {
       return;
     }
     const SpeechRecognition = getRecognition();
-    if (!SpeechRecognition || quest.isPending || completed) return;
+    if (!SpeechRecognition || quest.isPending || handoff.isPending || transferring || completed || queueAhead === 0) return;
     setSpeechError('');
     quest.reset();
     let transcript = '';
@@ -188,6 +246,7 @@ export function QuestScreen() {
   }
 
   function restart() {
+    playbackId.current++;
     if (silenceTimer.current) clearTimeout(silenceTimer.current);
     silenceTimer.current = null;
     finishRecording.current = null;
@@ -199,6 +258,12 @@ export function QuestScreen() {
     setSpeaking(false);
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     quest.reset();
+    handoff.reset();
+    queueStart.current = null;
+    setQueueStarted(false);
+    setQueueAhead(QUEUE_START);
+    setConsulted(false);
+    setTransferring(false);
     setHistory([]);
     setStage(0);
     setCompleted(false);
@@ -221,35 +286,35 @@ export function QuestScreen() {
         </section>
         <section className="metrics" aria-label="Fiktive nøkkeltall">
           <div className="metric"><span className="metric-icon">☕</span><div><small>Kaffenivå</small><strong>{coffee}%</strong></div><span className="metric-note">KRITISK VIKTIG</span><div className="metric-meter"><i style={{ width: `${coffee}%` }} /></div></div>
-          <div className="metric"><span className="metric-icon">↗</span><div><small>Kollegaer reddet fra telefonkø</small><strong>{Math.floor(history.length / 2) + 3}</strong></div><span className="metric-note">I DAG, VISSTNOK</span></div>
+          <div className="metric queue-metric"><span className="metric-icon">↗</span><div><small>Foran i køen</small><strong>{queueAhead}</strong></div><span className="metric-note">BAK KULISSENE · FIKTIV KØ</span></div>
           <div className="metric"><span className="metric-icon">▤</span><div><small>Skjemaer utsatt</small><strong>{Math.floor(history.length / 2) + 12}</strong></div><span className="metric-note">EFFEKTIVISERING</span></div>
           <div className="metric"><span className="metric-icon">◎</span><div><small>Risiko for faktisk arbeid</small><strong>{history.length ? '18' : '7'}<span className="metric-percent">%</span></strong></div><span className="metric-note">UNDER KONTROLL</span></div>
         </section>
-        <section className="workspace" aria-label="Samtale med Bjarne">
+        <section className="workspace" aria-label="Samtale med Bjarne og Mira">
           <div className="call-card">
             <div className="call-head"><span><span className="online-dot" /> SAMTALEN ER ÅPEN</span><span className="round-status">{completed ? 'RUNDE FULLFØRT' : 'INGEN SAK OPPRETTET'}</span></div>
             <div className="call-stage">
-            <div className={`bjarne-scene ${phase}`}>
+              <div className={`bjarne-scene ${phase} ${currentSpeaker === 'kollega' ? 'colleague-scene' : ''}`}>
               <div className="scene-grid" aria-hidden="true" /><div className="scene-orbit orbit-one" aria-hidden="true" /><div className="scene-orbit orbit-two" aria-hidden="true" />
-              <div className="bjarne-portrait" role="img" aria-label="Illustrasjon av Bjarne med kaffekopp">
-                <div className="portrait-head"><span className="portrait-hair" /><span className="portrait-glasses"><i /><i /></span><span className="portrait-nose" /><span className="portrait-mouth" /></div>
-                <div className="portrait-body"><span className="portrait-shirt" /><span className="portrait-tie" /></div><span className="portrait-coffee" aria-hidden="true">☕</span>
-              </div>
-              <div className="scene-caption">{speaking ? 'BJARNE HAR ORDET' : quest.isPending ? 'VURDERER Å HJELPE DEG' : listening ? 'HØRER PÅ DEG' : 'PÅ JOBB, MOT SIN VILJE'}</div>
+                {currentSpeaker === 'kollega' ? <div className="colleague-portrait" role="img" aria-label="Illustrasjon av den oppdiktede kollegaen Mira">M</div> : <div className="bjarne-portrait" role="img" aria-label="Illustrasjon av Bjarne med kaffekopp">
+                  <div className="portrait-head"><span className="portrait-hair" /><span className="portrait-glasses"><i /><i /></span><span className="portrait-nose" /><span className="portrait-mouth" /></div>
+                  <div className="portrait-body"><span className="portrait-shirt" /><span className="portrait-tie" /></div><span className="portrait-coffee" aria-hidden="true">☕</span>
+                </div>}
+              <div className="scene-caption">{currentSpeaker === 'kollega' ? 'MIRA HAR OVERTATT' : speaking ? 'BJARNE HAR ORDET' : quest.isPending || handoff.isPending ? 'VURDERER Å HJELPE DEG' : listening ? 'HØRER PÅ DEG' : 'PÅ JOBB, MOT SIN VILJE'}</div>
             </div>
-            <div className="agent-intro"><span className="eyebrow">DIN DIGITALE SKADEBEHANDLER</span><h2>Bjarne <span className="availability"><span className="online-dot" /> {speaking ? 'Snakker' : listening ? 'Lytter' : quest.isPending ? 'Tenker' : 'Tilgjengelig'}</span></h2></div>
-            <div className="agent-bubble"><span className="turn-name">BJARNE SIER</span><p>{history.filter(turn => turn.role === 'assistant').at(-1)?.content ?? '«Sukk. Fortell hva som skjedde, så skal jeg se om vi kan unngå et skjema.»'}</p><Waveform active={speaking} volume={68} label={speaking ? 'Bjarne snakker' : 'Bjarne er stille'} /></div>
+            <div className="agent-intro"><span className="eyebrow">{currentSpeaker === 'kollega' ? 'DIN OPPDIKTEDE KOLLEGA' : 'DIN DIGITALE SKADEBEHANDLER'}</span><h2>{currentSpeaker === 'kollega' ? 'Mira' : 'Bjarne'} <span className="availability"><span className="online-dot" /> {speaking ? 'Snakker' : listening ? 'Lytter' : quest.isPending || handoff.isPending ? 'Tenker' : 'Tilgjengelig'}</span></h2></div>
+            <div className={`agent-bubble ${currentSpeaker === 'kollega' ? 'colleague-bubble' : ''}`}><span className="turn-name">{currentSpeaker === 'kollega' ? 'MIRA SIER' : 'BJARNE SIER'}</span><p>{history.filter(turn => turn.role === 'assistant').at(-1)?.content ?? '«Sukk. Fortell hva som skjedde, så skal jeg se om vi kan unngå et skjema.»'}</p><Waveform active={speaking} volume={68} label={speaking ? `${currentSpeaker === 'kollega' ? 'Mira' : 'Bjarne'} snakker` : 'Taler er stille'} /></div>
             <div className="conversation-card">
               <div className="messages" ref={conversation} role="log" aria-live="polite" aria-label="Samtale">
                 {history.length === 0 && <div className="opening"><div className="opening-icon" aria-hidden="true">✳</div><h3>Her begynner historien din.</h3><p>Fortell om en oppdiktet skade. For eksempel: «En drage tok med seg garasjen min.»</p></div>}
-                {history.map((turn, index) => <div key={index} className={`turn ${turn.role}`}><div className="turn-name">{turn.role === 'user' ? 'DU' : 'BJARNE'}</div><div className="bubble">{turn.content}</div></div>)}
-                {quest.isPending && <div className="turn assistant"><div className="turn-name">BJARNE</div><div className="bubble thinking"><span className="thinking-dots" aria-hidden="true">● ● ●</span> Sukk. Bjarne finner et nytt skjema …</div></div>}
+                {history.map((turn, index) => <div key={index} className={`turn ${turn.role} ${turn.speaker === 'kollega' ? 'colleague-turn' : ''}`}><div className="turn-name">{turn.role === 'user' ? 'DU' : turn.speaker === 'kollega' ? 'MIRA' : 'BJARNE'}</div><div className="bubble">{turn.content}</div></div>)}
+                {(quest.isPending || handoff.isPending) && <div className="turn assistant"><div className="turn-name">BJARNE</div><div className="bubble thinking"><span className="thinking-dots" aria-hidden="true">● ● ●</span> Bjarne finner et nytt skjema …</div></div>}
               </div>
             </div>
             <div className="customer-mic">
               <div className="eyebrow">DIN TUR TIL Å SNAKKE</div>
               <div className="voice-controls">
-                {supported && !completed && <button className={`mic-button ${listening ? 'is-recording' : ''}`} type="button" onClick={listen} disabled={quest.isPending || stopping} aria-label={listening ? 'Stopp mikrofonen' : 'Trykk for å snakke'} aria-pressed={listening}><span className="mic-ring" /><span className="mic-icon" aria-hidden="true">{listening ? <span className="stop-icon" /> : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="2" width="6" height="13" rx="3" /><path d="M5 10a7 7 0 0 0 14 0M12 17v5m-4 0h8" /></svg>}</span></button>}
+                 {supported && !completed && <button className={`mic-button ${listening ? 'is-recording' : ''}`} type="button" onClick={listen} disabled={quest.isPending || handoff.isPending || transferring || stopping || queueAhead === 0} aria-label={listening ? 'Stopp mikrofonen' : 'Trykk for å snakke'} aria-pressed={listening}><span className="mic-ring" /><span className="mic-icon" aria-hidden="true">{listening ? <span className="stop-icon" /> : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="2" width="6" height="13" rx="3" /><path d="M5 10a7 7 0 0 0 14 0M12 17v5m-4 0h8" /></svg>}</span></button>}
                 {listening ? <div className="recording-info" role="status"><span className="rec-line"><span className="rec-dot" /> REC <span className="rec-time">{String(Math.floor(elapsed / 60)).padStart(2, '0')}:{String(elapsed % 60).padStart(2, '0')}</span></span><span className="control-help">{stopping ? 'Avslutter opptak …' : '3 sekunder stillhet sender · trykk for å stoppe'}</span></div> : <div className="control-info"><strong>{supported ? 'Trykk og fortell' : 'Skriv til Bjarne'}</strong><span className="control-help">{supported ? 'Replikken sendes etter 3 sekunder stillhet' : 'Mikrofon støttes ikke i denne nettleseren'}</span></div>}
               </div>
               <Waveform active={listening} volume={level} label={listening ? 'Mikrofonen registrerer lyd' : 'Mikrofonen er av'} />
@@ -258,9 +323,10 @@ export function QuestScreen() {
             <div className="composer">
               {speechError && <Alert color="red" title="Mikrofonen svarte ikke" mb="sm">{speechError}</Alert>}
               {quest.isError && <Alert color="red" title="Samtalen stoppet" mb="sm">{quest.error.message}</Alert>}
+              {handoff.isError && <Alert color="red" title="Overføringen stoppet" mb="sm">{handoff.error.message} <Button size="xs" onClick={() => handoff.mutate(consulted ? 'transfer' : 'consult')}>Prøv igjen</Button></Alert>}
               {completed ? <div className="finished"><p>Runden er over. Ingen virkelig skademelding er sendt.</p><Button onClick={restart}>Start en ny, oppdiktet runde ↗</Button></div> : <>
                 <label className="input-label" htmlFor="quest-draft">FORETREKKER DU Å SKRIVE?</label>
-                <div className="input-row"><Textarea id="quest-draft" aria-label="Din oppdiktede skademelding" placeholder="Beskriv en oppdiktet skade her …" value={draft} onChange={event => setDraft(event.currentTarget.value)} minRows={2} maxLength={2000} disabled={quest.isPending || listening} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); submit(); } }} /><Button onClick={() => submit()} disabled={!draft.trim() || quest.isPending || listening} loading={quest.isPending} aria-label="Send til Bjarne">Send ↗</Button></div>
+                 <div className="input-row"><Textarea id="quest-draft" aria-label="Din oppdiktede skademelding" placeholder="Beskriv en oppdiktet skade her …" value={draft} onChange={event => setDraft(event.currentTarget.value)} minRows={2} maxLength={2000} disabled={quest.isPending || handoff.isPending || transferring || listening || queueAhead === 0} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); submit(); } }} /><Button onClick={() => submit()} disabled={!draft.trim() || quest.isPending || handoff.isPending || transferring || listening || queueAhead === 0} loading={quest.isPending} aria-label="Send til Bjarne">Send ↗</Button></div>
                 <span className="hint">{listening ? 'Vi lytter. Du kan stoppe opptaket med mikrofonknappen.' : 'Enter for å sende · Shift + Enter for ny linje'}</span>
               </>}
             </div>

@@ -125,3 +125,12 @@ body,.page{background:#090c33;color:#ffffff}
 .input-row textarea{background:#ffffff;color:#090c33}
 .demo-note{color:#090c33}
 .finished p,.hint{color:#ffffff}
+
+.queue-metric{border:2px solid #7c55ff}
+.queue-metric strong{font-variant-numeric:tabular-nums}
+.colleague-bubble{border-color:#7c55ff;background:#ede7ff}
+.colleague-bubble:before{border-color:#7c55ff;background:#ede7ff}
+.colleague-turn .bubble{background:#ede7ff;color:#090c33}
+.colleague-turn .turn-name{color:#f4ffaf}
+.colleague-scene{background:#ded7ff}
+.colleague-portrait{position:relative;z-index:1;display:grid;place-items:center;width:104px;height:104px;margin-bottom:23px;border:5px solid #090c33;border-radius:50%;background:#7c55ff;color:#ffffff;font-size:62px;font-weight:800;box-shadow:0 10px 24px #090c3340}
