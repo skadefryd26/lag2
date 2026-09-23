@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Alert, Button, Textarea } from '@mantine/core';
 import { useMutation } from '@tanstack/react-query';
 import { sendQuest, type Turn } from './questApi';
+import { playReaction, withoutSigh } from './sigh';
 import { Waveform, useMicrophoneLevel } from './VoiceDisplay';
 import { BjarneStatus, newQueueNumber } from './BjarneStatus';
 
@@ -27,10 +28,12 @@ function getRecognition(): RecognitionConstructor | undefined {
   return speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
 }
 
-function say(text: string, onStart: () => void, onEnd: () => void) {
-  if (!('speechSynthesis' in window)) return;
-  window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
+async function say(text: string, caught: boolean, onStart: () => void, onEnd: () => void) {
+  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+  onStart();
+  await playReaction(caught);
+  if (!('speechSynthesis' in window)) return onEnd();
+  const utterance = new SpeechSynthesisUtterance(withoutSigh(text));
   utterance.lang = 'nb-NO';
   utterance.rate = 0.96;
   const norwegian = window.speechSynthesis.getVoices().find(voice => voice.lang.toLowerCase().startsWith('nb'));
@@ -65,7 +68,7 @@ export function QuestScreen() {
       setStage(result.stage);
       setCompleted(result.completed);
       setDraft('');
-      say(result.reply, () => setSpeaking(true), () => setSpeaking(false));
+      say(result.reply, result.completed, () => setSpeaking(true), () => setSpeaking(false));
     },
   });
   const phase = listening ? 'recording' : speaking ? 'speaking' : quest.isPending ? 'thinking' : 'idle';
