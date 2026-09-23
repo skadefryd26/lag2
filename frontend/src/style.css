@@ -80,3 +80,48 @@ button:focus-visible,textarea:focus-visible{outline:3px solid #7c55ff;outline-of
 .mic-button{background:#7c55ff}
 .mic-ring{border-color:#7c55ff}
 .input-row .mantine-Button-root:not(:disabled),.finished .mantine-Button-root{background:#7c55ff;color:#ffffff}
+
+/* Blått er hele scenen; kortene for nøkkeltall beholder sine hvite flater. */
+:root{background:#090c33;color:#ffffff}
+body,.page{background:#090c33;color:#ffffff}
+.masthead{background:#090c33;border-bottom-color:#ffffff30}
+.brand,.header-nav,.content footer,.eyebrow{color:#ffffff}
+.brand-divider{background:#ffffff65}
+.eyebrow-line{background:#f4ffaf}
+.hero h1 span{color:#f4ffaf;background:none}
+.metric{color:#090c33;border-color:#090c3330}
+.metric-note{color:#090c33}
+.call-card{background:#090c33;color:#ffffff;border-color:#ffffff75;box-shadow:0 20px 50px #00000035}
+.call-head{border-bottom:1px solid #ffffff40}
+.bjarne-scene{background:#f4ffaf}
+.bjarne-scene:before{background:#ffffff80}
+.scene-grid{opacity:.3}
+.scene-orbit{border-color:#090c3338}
+.scene-caption{color:#090c33}
+.portrait-head{background:#e8b68d;border-color:#bd8066}
+.portrait-hair{background:#382d32}
+.portrait-glasses i{border-color:#263c58;background:#ffffff55}
+.portrait-glasses:after{background:#263c58}
+.portrait-nose{background:#c98d70}
+.portrait-mouth{background:#915947}
+.portrait-body{background:#263c58}
+.portrait-tie{background:#b94748}
+.availability{color:#090c33}
+.agent-bubble{background:#ffffff;color:#090c33;border-color:#ffffff}
+.agent-bubble:before{background:#ffffff;border-color:#ffffff}
+.agent-bubble .turn-name{color:#090c33}
+.opening{color:#ffffff}
+.opening-icon{color:#090c33}
+.turn-name{color:#f4ffaf}
+.bubble{color:#090c33;background:#f4ffaf}
+.user .bubble{color:#090c33;background:#ffffff}
+.thinking-dots{color:#090c33}
+.customer-mic{border-top-color:#ffffff50}
+.customer-mic .waveform span{background:#ffffff}
+.mic-button.is-recording{background:#7c55ff;box-shadow:0 0 0 7px #ffffff35,0 0 27px #7c55ff88}
+.control-info,.recording-info,.rec-line{color:#ffffff}
+.rec-dot{background:#f4ffaf}
+.composer{background:#090c33;border-top-color:#ffffff50;color:#ffffff}
+.input-row textarea{background:#ffffff;color:#090c33}
+.demo-note{color:#090c33}
+.finished p,.hint{color:#ffffff}
