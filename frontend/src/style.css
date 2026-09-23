@@ -130,6 +130,7 @@ body,.page{background:#090c33;color:#ffffff}
 .scene-widget{padding:9px 11px;border-radius:11px;background:#ffffff;color:#090c33;box-shadow:0 6px 16px #090c3320}
 .scene-widget span{display:block;font-size:9px;letter-spacing:.08em;font-weight:800}
 .scene-widget strong{display:block;margin-top:4px;font-size:13px;line-height:1.25}
+.personality-widget small{display:block;margin-top:4px;font-size:9px}
 .queue-widget{background:#ffffff}
 .queue-widget strong{font-size:20px;line-height:1}
 .queue-widget small{display:block;margin-top:4px;font-size:9px}

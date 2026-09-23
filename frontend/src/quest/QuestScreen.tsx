@@ -238,7 +238,7 @@ export function QuestScreen() {
                 <div className="portrait-head"><span className="portrait-hair" /><span className="portrait-glasses"><i /><i /></span><span className="portrait-nose" /><span className="portrait-mouth" /></div>
                 <div className="portrait-body"><span className="portrait-shirt" /><span className="portrait-tie" /></div><span className="portrait-coffee" aria-hidden="true">☕</span>
               </div>
-              <BjarneStatus status={phase} completed={completed} stage={stage} queueNumber={queueNumber} />
+              <BjarneStatus completed={completed} stage={stage} queueNumber={queueNumber} />
               <div className="scene-caption">{speaking ? 'BJARNE HAR ORDET' : quest.isPending ? 'VURDERER Å HJELPE DEG' : listening ? 'HØRER PÅ DEG' : 'PÅ JOBB, MOT SIN VILJE'}</div>
             </div>
             <div className="agent-intro"><span className="eyebrow">DIN DIGITALE SKADEBEHANDLER</span><h2>Bjarne <span className="availability"><span className="online-dot" /> {speaking ? 'Snakker' : listening ? 'Lytter' : quest.isPending ? 'Tenker' : 'Tilgjengelig'}</span></h2></div>
