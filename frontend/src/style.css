@@ -126,6 +126,14 @@ body,.page{background:#090c33;color:#ffffff}
 .demo-note{color:#090c33}
 .finished p,.hint{color:#ffffff}
 
+.queue-metric{border:2px solid #7c55ff}
+.queue-metric strong{font-variant-numeric:tabular-nums}
+.colleague-bubble{border-color:#7c55ff;background:#ede7ff}
+.colleague-bubble:before{border-color:#7c55ff;background:#ede7ff}
+.colleague-turn .bubble{background:#ede7ff;color:#090c33}
+.colleague-turn .turn-name{color:#f4ffaf}
+.colleague-scene{background:#ded7ff}
+.colleague-portrait{position:relative;z-index:1;display:grid;place-items:center;width:104px;height:104px;margin-bottom:23px;border:5px solid #090c33;border-radius:50%;background:#7c55ff;color:#ffffff;font-size:62px;font-weight:800;box-shadow:0 10px 24px #090c3340}
 .bjarne-status{position:absolute;z-index:5;right:13px;top:42px;width:145px;display:grid;gap:7px;text-align:left}
 .scene-widget{padding:9px 11px;border-radius:11px;background:#ffffff;color:#090c33;box-shadow:0 6px 16px #090c3320}
 .scene-widget span{display:block;font-size:9px;letter-spacing:.08em;font-weight:800}

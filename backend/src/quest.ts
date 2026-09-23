@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { BJARNE_SYSTEM_PROMPT, END_INSTRUCTION, STAGE_INSTRUCTIONS } from "./bjarne.js";
+import { COLLEAGUE_PROMPT, CONSULT_REPLY, TRANSFER_REPLY } from "./colleague.js";
 import { askGateway, GatewayError } from "./gateway.js";
 
 const MAX_HISTORY = 20;
@@ -31,6 +32,16 @@ export function parseQuestRequest(body: unknown): QuestRequest | string {
   return { history: b.history, message: b.message, stage: b.stage! };
 }
 
+export function parseTransferRequest(body: unknown): Message[] | string {
+  if (!body || typeof body !== "object" || !("history" in body)) return "Forventet history.";
+  const history = (body as { history: unknown }).history;
+  if (!Array.isArray(history) || history.length > MAX_HISTORY) return `history må være en liste med maks ${MAX_HISTORY} innslag.`;
+  for (const m of history)
+    if (!m || (m.role !== "user" && m.role !== "assistant") || !isText(m.content, MAX_CONTENT))
+      return "Ugyldig innslag i history.";
+  return history;
+}
+
 export const questRouter = Router().post("/api/quest", async (req, res) => {
   const parsed = parseQuestRequest(req.body);
   if (typeof parsed === "string") return void res.status(400).json({ error: parsed });
@@ -48,6 +59,26 @@ export const questRouter = Router().post("/api/quest", async (req, res) => {
   } catch (e) {
     const status = e instanceof GatewayError ? e.status : 500;
     const error = e instanceof GatewayError ? e.message : "Noe gikk galt hos Bjarne.";
+    res.status(status).json({ error });
+  }
+});
+
+questRouter.post("/api/quest/handoff", async (req, res) => {
+  const history = parseTransferRequest(req.body);
+  if (typeof history === "string") return void res.status(400).json({ error: history });
+  const phase = (req.body as { phase?: unknown }).phase;
+  if (phase !== "consult" && phase !== "transfer") return void res.status(400).json({ error: "Ugyldig overføringsfase." });
+
+  try {
+    if (phase === "consult") return void res.json({ turns: [{ speaker: "bjarne", reply: CONSULT_REPLY }], completed: false });
+    const colleague = await askGateway(COLLEAGUE_PROMPT, [...history, { role: "assistant", content: TRANSFER_REPLY }]);
+    res.json({ turns: [
+      { speaker: "bjarne", reply: TRANSFER_REPLY },
+      { speaker: "kollega", reply: `${colleague}\n\nIngen virkelig skademelding er sendt eller opprettet.` },
+    ], completed: true });
+  } catch (e) {
+    const status = e instanceof GatewayError ? e.status : 500;
+    const error = e instanceof GatewayError ? e.message : "Mira kunne ikke ta over samtalen.";
     res.status(status).json({ error });
   }
 });
