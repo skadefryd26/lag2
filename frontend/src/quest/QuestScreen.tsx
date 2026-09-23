@@ -39,6 +39,7 @@ export function QuestScreen() {
   const [completed, setCompleted] = useState(false);
   const [draft, setDraft] = useState('');
   const [listening, setListening] = useState(false);
+  const [stopping, setStopping] = useState(false);
   const [speechError, setSpeechError] = useState('');
   const recognition = useRef<Recognition | null>(null);
   const conversation = useRef<HTMLDivElement>(null);
@@ -58,7 +59,9 @@ export function QuestScreen() {
     conversation.current?.scrollTo({ top: conversation.current.scrollHeight, behavior: 'smooth' });
   }, [history, quest.isPending]);
   useEffect(() => () => {
-    recognition.current?.stop();
+    const session = recognition.current;
+    recognition.current = null;
+    session?.stop();
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
   }, []);
 
@@ -72,7 +75,10 @@ export function QuestScreen() {
 
   function listen() {
     if (listening) {
-      recognition.current?.stop();
+      if (!stopping) {
+        setStopping(true);
+        recognition.current?.stop();
+      }
       return;
     }
     const SpeechRecognition = getRecognition();
@@ -81,33 +87,46 @@ export function QuestScreen() {
     quest.reset();
     const session = new SpeechRecognition();
     recognition.current = session;
+    let transcript = '';
+    let failed = false;
     session.lang = 'nb-NO';
     session.interimResults = false;
     session.onresult = event => {
-      const text = event.results[0]?.[0]?.transcript?.trim();
-      if (text) {
-        setDraft(text);
-        submit(text);
-      } else setSpeechError('Jeg hørte ingenting. Prøv igjen eller skriv i feltet.');
+      transcript = event.results[0]?.[0]?.transcript?.trim() ?? '';
+      if (transcript) setDraft(transcript);
     };
     session.onerror = event => {
-      setListening(false);
+      failed = true;
       setSpeechError(event.error === 'not-allowed' || event.error === 'service-not-allowed'
         ? 'Mikrofonen er ikke tillatt. Du kan skrive i feltet i stedet.'
         : 'Jeg fikk ikke med meg det du sa. Prøv igjen eller skriv i feltet.');
     };
-    session.onend = () => setListening(false);
+    session.onend = () => {
+      if (recognition.current !== session) return;
+      recognition.current = null;
+      setListening(false);
+      setStopping(false);
+      if (failed) return;
+      if (transcript) submit(transcript);
+      else setSpeechError('Jeg hørte ingenting. Prøv igjen eller skriv i feltet.');
+    };
     try {
       session.start();
       setListening(true);
     } catch {
+      recognition.current = null;
       setListening(false);
+      setStopping(false);
       setSpeechError('Mikrofonen kunne ikke startes. Du kan skrive i feltet i stedet.');
     }
   }
 
   function restart() {
-    recognition.current?.stop();
+    const session = recognition.current;
+    recognition.current = null;
+    session?.stop();
+    setListening(false);
+    setStopping(false);
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     quest.reset();
     setHistory([]);
@@ -145,7 +164,7 @@ export function QuestScreen() {
             {quest.isError && <Alert color="red" title="Samtalen stoppet" mb="sm">{quest.error.message}</Alert>}
             {completed ? <div className="finished"><p>Runden er over. Ingen virkelig skademelding er sendt.</p><Button onClick={restart} color="orange">Start en ny, oppdiktet runde ↗</Button></div> : <>
               <Textarea aria-label="Din oppdiktede skademelding" placeholder="Beskriv en oppdiktet skade her …" value={draft} onChange={event => setDraft(event.currentTarget.value)} minRows={2} maxLength={2000} disabled={quest.isPending || listening} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); submit(); } }} />
-              <Group justify="space-between" mt="sm" gap="xs"><span className="hint">{supported ? 'Trykk for én replikk · eller skriv selv' : 'Talegjenkjenning mangler her · skriv i feltet'}</span><Group gap="xs">{supported && <Button variant="light" color="orange" onClick={listen} disabled={quest.isPending} aria-label={listening ? 'Stopp mikrofonen' : 'Trykk for å snakke'}>{listening ? '■ Stopp lytting' : '◉ Trykk for å snakke'}</Button>}<Button color="orange" onClick={() => submit()} disabled={!draft.trim() || quest.isPending || listening} loading={quest.isPending}>Send til Bjarne →</Button></Group></Group>
+              <Group justify="space-between" mt="sm" gap="xs"><span className="hint">{supported ? 'Stopp opptaket for å sende · eller skriv selv' : 'Talegjenkjenning mangler her · skriv i feltet'}</span><Group gap="xs">{supported && <Button variant="light" color="orange" onClick={listen} disabled={quest.isPending || stopping} aria-label={listening ? 'Stopp mikrofonen' : 'Trykk for å snakke'}>{stopping ? 'Avslutter opptak …' : listening ? '■ Stopp lytting' : '◉ Trykk for å snakke'}</Button>}<Button color="orange" onClick={() => submit()} disabled={!draft.trim() || quest.isPending || listening} loading={quest.isPending}>Send til Bjarne →</Button></Group></Group>
             </>}
           </div>
         </div>
