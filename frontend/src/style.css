@@ -125,3 +125,13 @@ body,.page{background:#090c33;color:#ffffff}
 .input-row textarea{background:#ffffff;color:#090c33}
 .demo-note{color:#090c33}
 .finished p,.hint{color:#ffffff}
+
+.bjarne-status{position:absolute;z-index:5;right:13px;top:42px;width:145px;display:grid;gap:7px;text-align:left}
+.scene-widget{padding:9px 11px;border-radius:11px;background:#ffffff;color:#090c33;box-shadow:0 6px 16px #090c3320}
+.scene-widget span{display:block;font-size:9px;letter-spacing:.08em;font-weight:800}
+.scene-widget strong{display:block;margin-top:4px;font-size:13px;line-height:1.25}
+.queue-widget{background:#ffffff}
+.queue-widget strong{font-size:20px;line-height:1}
+.queue-widget small{display:block;margin-top:4px;font-size:9px}
+@media(max-width:750px){.bjarne-scene .bjarne-portrait{transform:translateX(-48px) scale(.65)}.bjarne-status{right:7px;top:46px;width:116px;gap:5px}.scene-widget{padding:7px}.scene-widget span{font-size:8px}.scene-widget strong{font-size:11px}.queue-widget strong{font-size:17px}.queue-widget small{font-size:8px}}
+@media(max-width:750px){.bjarne-scene{height:215px}.bjarne-scene .bjarne-portrait{transform:translateX(-56px) scale(.7)}.bjarne-status{top:52px;width:122px}.scene-caption{left:8px;top:9px}}
