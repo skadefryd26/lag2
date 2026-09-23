@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Badge, Button, Group, Loader, Textarea, Title } from '@mantine/core';
+import { Alert, Button, Textarea } from '@mantine/core';
 import { useMutation } from '@tanstack/react-query';
 import { sendQuest, type Turn } from './questApi';
+import { Waveform, useMicrophoneLevel } from './VoiceDisplay';
 
 type Recognition = {
   lang: string;
@@ -25,7 +26,7 @@ function getRecognition(): RecognitionConstructor | undefined {
   return speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
 }
 
-function say(text: string) {
+function say(text: string, onStart: () => void, onEnd: () => void) {
   if (!('speechSynthesis' in window)) return;
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
@@ -33,6 +34,9 @@ function say(text: string) {
   utterance.rate = 0.96;
   const norwegian = window.speechSynthesis.getVoices().find(voice => voice.lang.toLowerCase().startsWith('nb'));
   if (norwegian) utterance.voice = norwegian;
+  utterance.onstart = onStart;
+  utterance.onend = onEnd;
+  utterance.onerror = onEnd;
   window.speechSynthesis.speak(utterance);
 }
 
@@ -43,11 +47,14 @@ export function QuestScreen() {
   const [draft, setDraft] = useState('');
   const [listening, setListening] = useState(false);
   const [stopping, setStopping] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
   const [speechError, setSpeechError] = useState('');
   const recognition = useRef<Recognition | null>(null);
   const silenceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const finishRecording = useRef<(() => void) | null>(null);
   const conversation = useRef<HTMLDivElement>(null);
+  const { level, elapsed } = useMicrophoneLevel(listening);
+  const coffee = Math.max(12, 86 - history.length * 9);
   const supported = typeof window !== 'undefined' && !!getRecognition();
   const quest = useMutation({
     mutationFn: (message: string) => sendQuest(message, history, stage),
@@ -56,9 +63,10 @@ export function QuestScreen() {
       setStage(result.stage);
       setCompleted(result.completed);
       setDraft('');
-      say(result.reply);
+      say(result.reply, () => setSpeaking(true), () => setSpeaking(false));
     },
   });
+  const phase = listening ? 'recording' : speaking ? 'speaking' : quest.isPending ? 'thinking' : 'idle';
 
   useEffect(() => {
     conversation.current?.scrollTo({ top: conversation.current.scrollHeight, behavior: 'smooth' });
@@ -69,6 +77,7 @@ export function QuestScreen() {
     const session = recognition.current;
     recognition.current = null;
     session?.stop();
+    setSpeaking(false);
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
   }, []);
 
@@ -187,6 +196,7 @@ export function QuestScreen() {
     session?.stop();
     setListening(false);
     setStopping(false);
+    setSpeaking(false);
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     quest.reset();
     setHistory([]);
@@ -198,38 +208,65 @@ export function QuestScreen() {
 
   return (
     <main className="page">
-      <header className="masthead"><span className="logo">S<span>✳</span></span><span>SKADEQUEST <span className="masthead-muted">/ EN HELT FIKTIV TELEFONKØ</span></span><Badge variant="light" color="orange">DEMO</Badge></header>
-      <section className="hero">
-        <div className="eyebrow">ET FORSIKRINGSSPILL SOM TAR SEG GOD TID</div>
-        <Title order={1}>Din skade. <em>Hans pause.</em></Title>
-        <p>Du har en oppdiktet skade. Bjarne har en kaffe som blir kald. Prøv å komme deg gjennom samtalen før han finner på et nytt skjema.</p>
-      </section>
-      <section className="quest-layout" aria-label="Samtale med Bjarne">
-        <aside className="agent-card">
-          <div className="portrait" aria-hidden="true"><span>☕</span><div className="portrait-face">B</div></div>
-          <div className="agent-online"><span className="online-dot" /> PÅ JOBB, MOT SIN VILJE</div>
-          <h2>Bjarne</h2><p>Senior spesialist i å kjøpe seg tid. Overraskende dyktig når han først gidder.</p>
-          <div className="agent-footer">«Sukk. Vi får vel se på det.»</div>
-        </aside>
-        <div className="conversation-card">
-          <div className="conversation-head"><div><span className="eyebrow">SAMTALE 001</span><h2>Skadetelefonen</h2></div><span className="round-status">{completed ? 'RUNDE FULLFØRT' : 'INGEN SAK OPPRETTET'}</span></div>
-          <div className="messages" ref={conversation} role="log" aria-live="polite" aria-label="Samtale">
-            <div className="intro-note">Dette er et spill. Bruk bare oppdiktede skader og personer — ingenting sendes som en virkelig skademelding.</div>
-            {history.length === 0 && <div className="opening"><span className="opening-icon">✳</span><h3>Bjarne venter på en grunn til å sukke.</h3><p>Fortell om en åpenbart oppdiktet skade. For eksempel: «En drage tok med seg garasjen min.»</p></div>}
-            {history.map((turn, index) => <div key={index} className={`turn ${turn.role}`}><div className="turn-name">{turn.role === 'user' ? 'DU' : 'BJARNE'}</div><div className="bubble">{turn.content}</div></div>)}
-            {quest.isPending && <div className="turn assistant"><div className="turn-name">BJARNE</div><div className="bubble thinking"><Loader size="xs" color="orange" /> Sukk. Bjarne finner et nytt skjema …</div></div>}
+      <header className="masthead">
+        <div className="brand"><span className="brand-symbol" aria-hidden="true">✳</span><span>skadequest<span className="brand-period">.</span></span></div>
+        <nav className="header-nav" aria-label="Navigasjon"><span>Oppdiktet forsikring</span><span className="nav-divider" /><span>Skadeassistent</span></nav>
+        <span className="demo-pill"><span className="online-dot" /> DEMOMODUS</span>
+      </header>
+      <div className="content">
+        <section className="hero">
+          <div className="eyebrow"><span className="eyebrow-line" /> SKADEOPPGJØR, PÅ EN HELT NY MÅTE</div>
+          <h1>En skade å melde.<br /><span>En AI som helst vil slippe.</span></h1>
+          <p>Møt Bjarne, din digitale skadebehandler. Svært kompetent. Lett kaffetørst. Urovekkende god på å finne nye spørsmål.</p>
+        </section>
+        <section className="metrics" aria-label="Fiktive nøkkeltall">
+          <div className="metric"><span className="metric-icon">☕</span><div><small>Kaffenivå</small><strong>{coffee}%</strong></div><span className="metric-note">KRITISK VIKTIG</span><div className="metric-meter"><i style={{ width: `${coffee}%` }} /></div></div>
+          <div className="metric"><span className="metric-icon">↗</span><div><small>Kollegaer reddet fra telefonkø</small><strong>{Math.floor(history.length / 2) + 3}</strong></div><span className="metric-note">I DAG, VISSTNOK</span></div>
+          <div className="metric"><span className="metric-icon">▤</span><div><small>Skjemaer utsatt</small><strong>{Math.floor(history.length / 2) + 12}</strong></div><span className="metric-note">EFFEKTIVISERING</span></div>
+          <div className="metric"><span className="metric-icon">◎</span><div><small>Risiko for faktisk arbeid</small><strong>{history.length ? '18' : '7'}<span className="metric-percent">%</span></strong></div><span className="metric-note">UNDER KONTROLL</span></div>
+        </section>
+        <section className="workspace" aria-label="Samtale med Bjarne">
+          <div className="voice-card">
+            <div className="card-kicker"><span className="online-dot" /> DIGITAL SKADEBEHANDLER <span className="card-version">01 / 04</span></div>
+            <div className={`bjarne-scene ${phase}`}>
+              <div className="scene-grid" aria-hidden="true" /><div className="scene-orbit orbit-one" aria-hidden="true" /><div className="scene-orbit orbit-two" aria-hidden="true" />
+              <div className="bjarne-portrait" role="img" aria-label="Illustrasjon av Bjarne med kaffekopp">
+                <div className="portrait-head"><span className="portrait-hair" /><span className="portrait-glasses"><i /><i /></span><span className="portrait-nose" /><span className="portrait-mouth" /></div>
+                <div className="portrait-body"><span className="portrait-shirt" /><span className="portrait-tie" /></div><span className="portrait-coffee" aria-hidden="true">☕</span>
+              </div>
+              <div className="scene-caption">{speaking ? 'BJARNE HAR ORDET' : quest.isPending ? 'VURDERER Å HJELPE DEG' : listening ? 'HØRER PÅ DEG' : 'PÅ JOBB, MOT SIN VILJE'}</div>
+            </div>
+            <div className="voice-bottom">
+              <div className="agent-title"><div><div className="eyebrow">DIN PERSONLIGE SKADEASSISTENT</div><h2>Bjarne <span className="verified" title="Fiktivt bekreftet">✳</span></h2></div><span className="availability"><span className="online-dot" /> {speaking ? 'Snakker' : listening ? 'Lytter' : quest.isPending ? 'Tenker' : 'Tilgjengelig'}</span></div>
+              <p className="agent-description">«Sukk. Fortell hva som skjedde, så skal jeg se om vi kan unngå et skjema.»</p>
+              <Waveform active={speaking || listening} volume={speaking ? 68 : level} label={speaking ? 'Bjarne snakker' : listening ? 'Mikrofonen registrerer lyd' : 'Ingen pågående tale'} />
+              <div className="voice-controls">
+                {supported && !completed && <button className={`mic-button ${listening ? 'is-recording' : ''}`} type="button" onClick={listen} disabled={quest.isPending || stopping} aria-label={listening ? 'Stopp mikrofonen' : 'Trykk for å snakke'} aria-pressed={listening}><span className="mic-ring" /><span className="mic-icon" aria-hidden="true">{listening ? <span className="stop-icon" /> : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="2" width="6" height="13" rx="3" /><path d="M5 10a7 7 0 0 0 14 0M12 17v5m-4 0h8" /></svg>}</span></button>}
+                {listening ? <div className="recording-info" role="status"><span className="rec-line"><span className="rec-dot" /> REC <span className="rec-time">{String(Math.floor(elapsed / 60)).padStart(2, '0')}:{String(elapsed % 60).padStart(2, '0')}</span></span><span className="control-help">{stopping ? 'Avslutter opptak …' : '3 sekunder stillhet sender · trykk for å stoppe'}</span></div> : <div className="control-info"><strong>{supported ? 'Trykk og fortell' : 'Skriv til Bjarne'}</strong><span className="control-help">{supported ? 'Replikken sendes etter 3 sekunder stillhet' : 'Mikrofon støttes ikke i denne nettleseren'}</span></div>}
+              </div>
+            </div>
           </div>
-          <div className="composer">
-            {speechError && <Alert color="orange" title="Mikrofonen svarte ikke" mb="sm">{speechError}</Alert>}
-            {quest.isError && <Alert color="red" title="Samtalen stoppet" mb="sm">{quest.error.message}</Alert>}
-            {completed ? <div className="finished"><p>Runden er over. Ingen virkelig skademelding er sendt.</p><Button onClick={restart} color="orange">Start en ny, oppdiktet runde ↗</Button></div> : <>
-              <Textarea aria-label="Din oppdiktede skademelding" placeholder="Beskriv en oppdiktet skade her …" value={draft} onChange={event => setDraft(event.currentTarget.value)} minRows={2} maxLength={2000} disabled={quest.isPending || listening} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); submit(); } }} />
-              <Group justify="space-between" mt="sm" gap="xs"><span className="hint">{supported ? 'Snakk fritt · sendes etter 3 sekunder stillhet · eller trykk stopp' : 'Talegjenkjenning mangler her · skriv i feltet'}</span><Group gap="xs">{supported && <Button variant="light" color="orange" onClick={listen} disabled={quest.isPending || stopping} aria-label={listening ? 'Stopp mikrofonen' : 'Trykk for å snakke'}>{stopping ? 'Avslutter opptak …' : listening ? '■ Stopp lytting' : '◉ Trykk for å snakke'}</Button>}<Button color="orange" onClick={() => submit()} disabled={!draft.trim() || quest.isPending || listening} loading={quest.isPending}>Send til Bjarne →</Button></Group></Group>
-            </>}
+          <div className="conversation-card">
+            <div className="conversation-head"><div><div className="eyebrow">DIREKTE SAMTALE</div><h2>Din samtale med Bjarne</h2></div><span className="round-status">{completed ? 'RUNDE FULLFØRT' : 'INGEN SAK OPPRETTET'}</span></div>
+            <div className="messages" ref={conversation} role="log" aria-live="polite" aria-label="Samtale">
+              <div className="intro-note"><span aria-hidden="true">ⓘ</span> Dette er et spill. Bruk bare oppdiktede skader og personer. Ingen virkelig skademelding sendes.</div>
+              {history.length === 0 && <div className="opening"><div className="opening-icon" aria-hidden="true">✳</div><h3>Her begynner historien din.</h3><p>Trykk på mikrofonen og fortell om en oppdiktet skade. For eksempel: «En drage tok med seg garasjen min.»</p></div>}
+              {history.map((turn, index) => <div key={index} className={`turn ${turn.role}`}><div className="turn-name">{turn.role === 'user' ? 'DU' : 'BJARNE'}</div><div className="bubble">{turn.content}</div></div>)}
+              {quest.isPending && <div className="turn assistant"><div className="turn-name">BJARNE</div><div className="bubble thinking"><span className="thinking-dots" aria-hidden="true">● ● ●</span> Sukk. Bjarne finner et nytt skjema …</div></div>}
+            </div>
+            <div className="composer">
+              {speechError && <Alert color="red" title="Mikrofonen svarte ikke" mb="sm">{speechError}</Alert>}
+              {quest.isError && <Alert color="red" title="Samtalen stoppet" mb="sm">{quest.error.message}</Alert>}
+              {completed ? <div className="finished"><p>Runden er over. Ingen virkelig skademelding er sendt.</p><Button onClick={restart}>Start en ny, oppdiktet runde ↗</Button></div> : <>
+                <label className="input-label" htmlFor="quest-draft">FORETREKKER DU Å SKRIVE?</label>
+                <div className="input-row"><Textarea id="quest-draft" aria-label="Din oppdiktede skademelding" placeholder="Beskriv en oppdiktet skade her …" value={draft} onChange={event => setDraft(event.currentTarget.value)} minRows={2} maxLength={2000} disabled={quest.isPending || listening} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); submit(); } }} /><Button onClick={() => submit()} disabled={!draft.trim() || quest.isPending || listening} loading={quest.isPending} aria-label="Send til Bjarne">Send ↗</Button></div>
+                <span className="hint">{listening ? 'Vi lytter. Du kan stoppe opptaket med mikrofonknappen.' : 'Enter for å sende · Shift + Enter for ny linje'}</span>
+              </>}
+            </div>
           </div>
-        </div>
-      </section>
-      <footer>SKADEQUEST · OPPDIKTET FRA FØRSTE TIL SISTE SUKK</footer>
+        </section>
+        <footer><span>✳ Skadequest — helt fiktiv forsikring, helt ekte sukk.</span><span>INGEN VIRKELIGE SAKER OPPRETTES HER</span></footer>
+      </div>
     </main>
   );
 }
