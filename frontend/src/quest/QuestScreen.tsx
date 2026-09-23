@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { Alert, Button, Textarea } from '@mantine/core';
 import { useMutation } from '@tanstack/react-query';
 import { sendHandoff, sendQuest, type Turn } from './questApi';
+import { playReaction, withoutSigh } from './sigh';
 import { Waveform, useMicrophoneLevel } from './VoiceDisplay';
 import { peopleAhead, QUEUE_START } from './queue';
+import { BjarneStatus, newQueueNumber } from './BjarneStatus';
 
 type Recognition = {
   lang: string;
@@ -27,10 +29,12 @@ function getRecognition(): RecognitionConstructor | undefined {
   return speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
 }
 
-function say(text: string, onStart: () => void, onEnd: () => void, speaker: 'bjarne' | 'kollega' = 'bjarne') {
-  if (!('speechSynthesis' in window)) { onEnd(); return; }
-  window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
+async function say(text: string, caught: boolean, onStart: () => void, onEnd: () => void, speaker: 'bjarne' | 'kollega' = 'bjarne') {
+  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+  onStart();
+  if (speaker === 'bjarne') await playReaction(caught);
+  if (!('speechSynthesis' in window)) return onEnd();
+  const utterance = new SpeechSynthesisUtterance(speaker === 'bjarne' ? withoutSigh(text) : text);
   utterance.lang = 'nb-NO';
   utterance.rate = 0.96;
   const norwegian = window.speechSynthesis.getVoices().find(voice => voice.lang.toLowerCase().startsWith('nb'));
@@ -56,6 +60,7 @@ export function QuestScreen() {
   const [queueStarted, setQueueStarted] = useState(false);
   const [consulted, setConsulted] = useState(false);
   const [transferring, setTransferring] = useState(false);
+  const [queueNumber, setQueueNumber] = useState(newQueueNumber);
   const recognition = useRef<Recognition | null>(null);
   const queueStart = useRef<number | null>(null);
   const playbackId = useRef(0);
@@ -74,17 +79,17 @@ export function QuestScreen() {
       setSpeaking(true);
       if (phase === 'transfer') {
         setTransferring(true);
-        say(turns[0].content, () => setSpeaking(true), () => {
+        void say(turns[0].content, false, () => setSpeaking(true), () => {
           if (playbackId.current !== currentPlayback) return;
           setHistory(previous => [...previous, turns[1]]);
           setCompleted(true);
           setTransferring(false);
           setSpeaking(false);
-          say(turns[1].content, () => setSpeaking(true), () => setSpeaking(false), 'kollega');
+          void say(turns[1].content, false, () => setSpeaking(true), () => setSpeaking(false), 'kollega');
         });
       } else {
         setConsulted(true);
-        say(turns[0].content, () => setSpeaking(true), () => {
+        void say(turns[0].content, false, () => setSpeaking(true), () => {
           if (playbackId.current === currentPlayback) setSpeaking(false);
         });
       }
@@ -99,7 +104,7 @@ export function QuestScreen() {
       setCompleted(result.completed);
       setDraft('');
       setSpeaking(true);
-      say(result.reply, () => setSpeaking(true), () => setSpeaking(false));
+      void say(result.reply, result.completed, () => setSpeaking(true), () => setSpeaking(false));
     },
   });
   const currentSpeaker = history.filter(turn => turn.role === 'assistant').at(-1)?.speaker ?? 'bjarne';
@@ -269,6 +274,7 @@ export function QuestScreen() {
     setCompleted(false);
     setDraft('');
     setSpeechError('');
+    setQueueNumber(previous => newQueueNumber(previous));
   }
 
   return (
@@ -300,6 +306,7 @@ export function QuestScreen() {
                   <div className="portrait-head"><span className="portrait-hair" /><span className="portrait-glasses"><i /><i /></span><span className="portrait-nose" /><span className="portrait-mouth" /></div>
                   <div className="portrait-body"><span className="portrait-shirt" /><span className="portrait-tie" /></div><span className="portrait-coffee" aria-hidden="true">☕</span>
                 </div>}
+              {currentSpeaker === 'bjarne' && <BjarneStatus completed={completed} stage={stage} queueNumber={queueNumber} />}
               <div className="scene-caption">{currentSpeaker === 'kollega' ? 'MIRA HAR OVERTATT' : speaking ? 'BJARNE HAR ORDET' : quest.isPending || handoff.isPending ? 'VURDERER Å HJELPE DEG' : listening ? 'HØRER PÅ DEG' : 'PÅ JOBB, MOT SIN VILJE'}</div>
             </div>
             <div className="agent-intro"><span className="eyebrow">{currentSpeaker === 'kollega' ? 'DIN OPPDIKTEDE KOLLEGA' : 'DIN DIGITALE SKADEBEHANDLER'}</span><h2>{currentSpeaker === 'kollega' ? 'Mira' : 'Bjarne'} <span className="availability"><span className="online-dot" /> {speaking ? 'Snakker' : listening ? 'Lytter' : quest.isPending || handoff.isPending ? 'Tenker' : 'Tilgjengelig'}</span></h2></div>
