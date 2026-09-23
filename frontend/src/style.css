@@ -60,3 +60,23 @@ button:focus-visible,textarea:focus-visible{outline:3px solid #7c55ff;outline-of
 @media(max-width:850px){.metrics{grid-template-columns:repeat(2,minmax(0,1fr));max-width:600px}.header-nav{display:none}}
 @media(max-width:750px){.masthead{height:68px;padding:0 15px}.brand{font-size:17px;gap:7px}.brand-divider{margin:0 3px}.project-name{font-size:13px}.gjensidige-mark{width:29px;height:29px}.demo-pill{font-size:9px;padding:7px}.content{padding:0 16px}.hero{padding:29px 0 24px}.hero h1{font-size:clamp(29px,8vw,40px)}.hero p{font-size:14px}.metrics{gap:8px;margin-bottom:15px}.metric{padding:13px;grid-template-columns:27px 1fr;column-gap:7px;min-height:94px}.metric-icon{width:26px;height:26px;font-size:15px}.metric small{font-size:10px}.metric strong{font-size:22px}.metric-note{font-size:8px}.metric-meter{left:47px;right:10px}.call-head{padding:13px 15px;font-size:9px}.call-stage{padding:15px 16px 10px}.bjarne-scene{height:145px}.bjarne-portrait{transform:scale(.65)}.agent-bubble{padding:12px}.agent-bubble p{font-size:14px}.conversation-card .messages{min-height:110px;max-height:215px}.composer{padding:16px}.content footer{flex-direction:column}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
+
+/* Profilhierarki: blå ramme og illustrasjon, hvit flate, gul fremheving, lilla handling. */
+.hero h1 span{color:#090c33;background:linear-gradient(transparent 66%,#f4ffaf 66%)}
+.eyebrow-line,.metric-meter i{background:#090c33}
+.metric-note,.turn-name,.thinking-dots{color:#090c33}
+.call-card{border-color:#090c33}
+.call-head{background:#090c33;color:#ffffff;border:0}
+.call-head .online-dot{background:#f4ffaf}
+.bjarne-scene{background:#090c33}
+.bjarne-scene:before{content:'';position:absolute;bottom:-82px;left:50%;width:265px;height:265px;transform:translateX(-50%);border-radius:50%;background:#f4ffaf}
+.portrait-nose,.portrait-mouth,.portrait-tie{background:#f4ffaf}
+.portrait-head{background:#f4ffaf}
+.portrait-glasses i{background:#ffffff33}
+.scene-grid{opacity:.5}
+.agent-bubble{border-color:#090c33}
+.agent-bubble:before{border-color:#090c33}
+.agent-bubble .waveform span{background:#090c33}
+.mic-button{background:#7c55ff}
+.mic-ring{border-color:#7c55ff}
+.input-row .mantine-Button-root:not(:disabled),.finished .mantine-Button-root{background:#7c55ff;color:#ffffff}
