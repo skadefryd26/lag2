@@ -3,6 +3,7 @@ import { Alert, Button, Textarea } from '@mantine/core';
 import { useMutation } from '@tanstack/react-query';
 import { sendQuest, type Turn } from './questApi';
 import { Waveform, useMicrophoneLevel } from './VoiceDisplay';
+import { BjarneStatus, newQueueNumber } from './BjarneStatus';
 
 type Recognition = {
   lang: string;
@@ -49,6 +50,7 @@ export function QuestScreen() {
   const [stopping, setStopping] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const [speechError, setSpeechError] = useState('');
+  const [queueNumber, setQueueNumber] = useState(newQueueNumber);
   const recognition = useRef<Recognition | null>(null);
   const silenceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const finishRecording = useRef<(() => void) | null>(null);
@@ -204,6 +206,7 @@ export function QuestScreen() {
     setCompleted(false);
     setDraft('');
     setSpeechError('');
+    setQueueNumber(previous => newQueueNumber(previous));
   }
 
   return (
@@ -235,6 +238,7 @@ export function QuestScreen() {
                 <div className="portrait-head"><span className="portrait-hair" /><span className="portrait-glasses"><i /><i /></span><span className="portrait-nose" /><span className="portrait-mouth" /></div>
                 <div className="portrait-body"><span className="portrait-shirt" /><span className="portrait-tie" /></div><span className="portrait-coffee" aria-hidden="true">☕</span>
               </div>
+              <BjarneStatus completed={completed} stage={stage} queueNumber={queueNumber} />
               <div className="scene-caption">{speaking ? 'BJARNE HAR ORDET' : quest.isPending ? 'VURDERER Å HJELPE DEG' : listening ? 'HØRER PÅ DEG' : 'PÅ JOBB, MOT SIN VILJE'}</div>
             </div>
             <div className="agent-intro"><span className="eyebrow">DIN DIGITALE SKADEBEHANDLER</span><h2>Bjarne <span className="availability"><span className="online-dot" /> {speaking ? 'Snakker' : listening ? 'Lytter' : quest.isPending ? 'Tenker' : 'Tilgjengelig'}</span></h2></div>
