@@ -2,33 +2,34 @@ const SIGH_WORD = /[*(]?\bsu+k+\b[.!…,:]*[*)]?[.!…,:]*\s*/gi;
 
 export const withoutSigh = (text: string) => text.replace(SIGH_WORD, '').trim();
 
-let audio: AudioContext | undefined;
+type Sigh = { text: string; pitch: number; rate: number; volume: number };
 
-// Syntetisert utpust: hvit støy gjennom et synkende båndpassfilter. Ingen lydfil å lisensiere.
-export async function playSigh(): Promise<void> {
-  try {
-    audio ??= new AudioContext();
-    await Promise.race([audio.resume(), new Promise(resolve => setTimeout(resolve, 300))]);
-    if (audio.state !== 'running') return;
+// Lavt, sakte og dempet = Bjarne lener seg bort fra mikrofonen.
+export const SIGHS: Sigh[] = [
+  { text: 'Hhhååå…', pitch: 0.6, rate: 0.5, volume: 0.55 },
+  { text: 'Mmmhhh…', pitch: 0.55, rate: 0.5, volume: 0.5 },
+  { text: 'Å, nei da…', pitch: 0.7, rate: 0.6, volume: 0.6 },
+  { text: 'Pfff.', pitch: 0.9, rate: 0.8, volume: 0.75 },
+  { text: 'Hmpf.', pitch: 0.8, rate: 0.8, volume: 0.7 },
+  { text: 'Æsj.', pitch: 0.85, rate: 0.75, volume: 0.7 },
+  { text: 'Uff…', pitch: 0.65, rate: 0.55, volume: 0.6 },
+  { text: 'Ææææh…', pitch: 0.55, rate: 0.45, volume: 0.55 },
+  { text: 'Uff da, altså…', pitch: 0.65, rate: 0.6, volume: 0.6 },
+];
 
-    const seconds = 1.2;
-    const buffer = audio.createBuffer(1, audio.sampleRate * seconds, audio.sampleRate);
-    const samples = buffer.getChannelData(0);
-    for (let i = 0; i < samples.length; i++) samples[i] = Math.random() * 2 - 1;
+const jitter = (value: number) => value * (0.9 + Math.random() * 0.2);
+let last = -1;
 
-    const noise = new AudioBufferSourceNode(audio, { buffer });
-    const filter = new BiquadFilterNode(audio, { type: 'bandpass', frequency: 900, Q: 1.2 });
-    const gain = new GainNode(audio, { gain: 0.0001 });
-    const now = audio.currentTime;
-    filter.frequency.exponentialRampToValueAtTime(350, now + seconds);
-    gain.gain.exponentialRampToValueAtTime(0.4, now + 0.25);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + seconds);
-
-    noise.connect(filter).connect(gain).connect(audio.destination);
-    const ended = new Promise(resolve => { noise.onended = resolve; });
-    noise.start();
-    await ended;
-  } catch (error) {
-    console.warn('Sukkelyden kunne ikke spilles:', error);
-  }
+export function sighUtterance(voice?: SpeechSynthesisVoice) {
+  let i = Math.floor(Math.random() * SIGHS.length);
+  if (i === last) i = (i + 1) % SIGHS.length;
+  last = i;
+  const sigh = SIGHS[i];
+  const utterance = new SpeechSynthesisUtterance(sigh.text);
+  utterance.lang = 'nb-NO';
+  if (voice) utterance.voice = voice;
+  utterance.pitch = jitter(sigh.pitch);
+  utterance.rate = jitter(sigh.rate);
+  utterance.volume = Math.min(1, jitter(sigh.volume));
+  return utterance;
 }

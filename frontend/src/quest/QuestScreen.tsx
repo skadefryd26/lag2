@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Alert, Badge, Button, Group, Loader, Textarea, Title } from '@mantine/core';
 import { useMutation } from '@tanstack/react-query';
 import { sendQuest, type Turn } from './questApi';
-import { playSigh, withoutSigh } from './sigh';
+import { sighUtterance, withoutSigh } from './sigh';
 
 type Recognition = {
   lang: string;
@@ -23,15 +23,15 @@ function getRecognition(): RecognitionConstructor | undefined {
   return speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
 }
 
-async function say(text: string) {
-  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-  await playSigh();
+function say(text: string) {
   if (!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(withoutSigh(text));
   utterance.lang = 'nb-NO';
   utterance.rate = 0.96;
   const norwegian = window.speechSynthesis.getVoices().find(voice => voice.lang.toLowerCase().startsWith('nb'));
   if (norwegian) utterance.voice = norwegian;
+  window.speechSynthesis.speak(sighUtterance(norwegian));
   window.speechSynthesis.speak(utterance);
 }
 
