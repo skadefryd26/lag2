@@ -17,8 +17,8 @@ declare module '@tanstack/react-router' {
 const theme = createTheme({
   fontFamily: '"DM Sans", sans-serif',
   headings: { fontFamily: '"DM Sans", sans-serif' },
-  primaryColor: 'teal',
-  colors: { teal: ['#ecfaf9', '#d4f3f0', '#a8e6e0', '#79d5cf', '#48bcb7', '#209d9b', '#0b8082', '#0a666c', '#095158', '#083f49'] },
+  primaryColor: 'violet',
+  colors: { violet: ['#f2eeff', '#e5ddff', '#d5c5ff', '#b9a0ff', '#9677ff', '#7c55ff', '#6325e7', '#4d19c0', '#38129b', '#280c76'] },
 });
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

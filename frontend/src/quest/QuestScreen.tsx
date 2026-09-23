@@ -209,8 +209,8 @@ export function QuestScreen() {
   return (
     <main className="page">
       <header className="masthead">
-        <div className="brand"><span className="brand-symbol" aria-hidden="true">✳</span><span>skadequest<span className="brand-period">.</span></span></div>
-        <nav className="header-nav" aria-label="Navigasjon"><span>Oppdiktet forsikring</span><span className="nav-divider" /><span>Skadeassistent</span></nav>
+        <div className="brand"><img src="https://cdn.gjensidige.no/builders/builders-platform/assets/favicons/gjensidige/android-chrome-192x192.png" alt="" className="gjensidige-mark" /><span>Gjensidige</span><span className="brand-divider" /><span className="project-name">Skadequest</span></div>
+        <nav className="header-nav" aria-label="Navigasjon"><span>En helt fiktiv skadetelefon</span></nav>
         <span className="demo-pill"><span className="online-dot" /> DEMOMODUS</span>
       </header>
       <div className="content">
@@ -219,15 +219,10 @@ export function QuestScreen() {
           <h1>En skade å melde.<br /><span>En AI som helst vil slippe.</span></h1>
           <p>Møt Bjarne, din digitale skadebehandler. Svært kompetent. Lett kaffetørst. Urovekkende god på å finne nye spørsmål.</p>
         </section>
-        <section className="metrics" aria-label="Fiktive nøkkeltall">
-          <div className="metric"><span className="metric-icon">☕</span><div><small>Kaffenivå</small><strong>{coffee}%</strong></div><span className="metric-note">KRITISK VIKTIG</span><div className="metric-meter"><i style={{ width: `${coffee}%` }} /></div></div>
-          <div className="metric"><span className="metric-icon">↗</span><div><small>Kollegaer reddet fra telefonkø</small><strong>{Math.floor(history.length / 2) + 3}</strong></div><span className="metric-note">I DAG, VISSTNOK</span></div>
-          <div className="metric"><span className="metric-icon">▤</span><div><small>Skjemaer utsatt</small><strong>{Math.floor(history.length / 2) + 12}</strong></div><span className="metric-note">EFFEKTIVISERING</span></div>
-          <div className="metric"><span className="metric-icon">◎</span><div><small>Risiko for faktisk arbeid</small><strong>{history.length ? '18' : '7'}<span className="metric-percent">%</span></strong></div><span className="metric-note">UNDER KONTROLL</span></div>
-        </section>
         <section className="workspace" aria-label="Samtale med Bjarne">
-          <div className="voice-card">
-            <div className="card-kicker"><span className="online-dot" /> DIGITAL SKADEBEHANDLER <span className="card-version">01 / 04</span></div>
+          <div className="call-card">
+            <div className="call-head"><span><span className="online-dot" /> SAMTALEN ER ÅPEN</span><span className="round-status">{completed ? 'RUNDE FULLFØRT' : 'INGEN SAK OPPRETTET'}</span></div>
+            <div className="call-stage">
             <div className={`bjarne-scene ${phase}`}>
               <div className="scene-grid" aria-hidden="true" /><div className="scene-orbit orbit-one" aria-hidden="true" /><div className="scene-orbit orbit-two" aria-hidden="true" />
               <div className="bjarne-portrait" role="img" aria-label="Illustrasjon av Bjarne med kaffekopp">
@@ -236,23 +231,23 @@ export function QuestScreen() {
               </div>
               <div className="scene-caption">{speaking ? 'BJARNE HAR ORDET' : quest.isPending ? 'VURDERER Å HJELPE DEG' : listening ? 'HØRER PÅ DEG' : 'PÅ JOBB, MOT SIN VILJE'}</div>
             </div>
-            <div className="voice-bottom">
-              <div className="agent-title"><div><div className="eyebrow">DIN PERSONLIGE SKADEASSISTENT</div><h2>Bjarne <span className="verified" title="Fiktivt bekreftet">✳</span></h2></div><span className="availability"><span className="online-dot" /> {speaking ? 'Snakker' : listening ? 'Lytter' : quest.isPending ? 'Tenker' : 'Tilgjengelig'}</span></div>
-              <p className="agent-description">«Sukk. Fortell hva som skjedde, så skal jeg se om vi kan unngå et skjema.»</p>
-              <Waveform active={speaking || listening} volume={speaking ? 68 : level} label={speaking ? 'Bjarne snakker' : listening ? 'Mikrofonen registrerer lyd' : 'Ingen pågående tale'} />
+            <div className="agent-intro"><span className="eyebrow">DIN DIGITALE SKADEBEHANDLER</span><h2>Bjarne <span className="availability"><span className="online-dot" /> {speaking ? 'Snakker' : listening ? 'Lytter' : quest.isPending ? 'Tenker' : 'Tilgjengelig'}</span></h2></div>
+            <div className="agent-bubble"><span className="turn-name">BJARNE SIER</span><p>{history.filter(turn => turn.role === 'assistant').at(-1)?.content ?? '«Sukk. Fortell hva som skjedde, så skal jeg se om vi kan unngå et skjema.»'}</p><Waveform active={speaking} volume={68} label={speaking ? 'Bjarne snakker' : 'Bjarne er stille'} /></div>
+            <div className="conversation-card">
+              <div className="messages" ref={conversation} role="log" aria-live="polite" aria-label="Samtale">
+                {history.length === 0 && <div className="opening"><div className="opening-icon" aria-hidden="true">✳</div><h3>Her begynner historien din.</h3><p>Fortell om en oppdiktet skade. For eksempel: «En drage tok med seg garasjen min.»</p></div>}
+                {history.map((turn, index) => <div key={index} className={`turn ${turn.role}`}><div className="turn-name">{turn.role === 'user' ? 'DU' : 'BJARNE'}</div><div className="bubble">{turn.content}</div></div>)}
+                {quest.isPending && <div className="turn assistant"><div className="turn-name">BJARNE</div><div className="bubble thinking"><span className="thinking-dots" aria-hidden="true">● ● ●</span> Sukk. Bjarne finner et nytt skjema …</div></div>}
+              </div>
+            </div>
+            <div className="customer-mic">
+              <div className="eyebrow">DIN TUR TIL Å SNAKKE</div>
               <div className="voice-controls">
                 {supported && !completed && <button className={`mic-button ${listening ? 'is-recording' : ''}`} type="button" onClick={listen} disabled={quest.isPending || stopping} aria-label={listening ? 'Stopp mikrofonen' : 'Trykk for å snakke'} aria-pressed={listening}><span className="mic-ring" /><span className="mic-icon" aria-hidden="true">{listening ? <span className="stop-icon" /> : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="2" width="6" height="13" rx="3" /><path d="M5 10a7 7 0 0 0 14 0M12 17v5m-4 0h8" /></svg>}</span></button>}
                 {listening ? <div className="recording-info" role="status"><span className="rec-line"><span className="rec-dot" /> REC <span className="rec-time">{String(Math.floor(elapsed / 60)).padStart(2, '0')}:{String(elapsed % 60).padStart(2, '0')}</span></span><span className="control-help">{stopping ? 'Avslutter opptak …' : '3 sekunder stillhet sender · trykk for å stoppe'}</span></div> : <div className="control-info"><strong>{supported ? 'Trykk og fortell' : 'Skriv til Bjarne'}</strong><span className="control-help">{supported ? 'Replikken sendes etter 3 sekunder stillhet' : 'Mikrofon støttes ikke i denne nettleseren'}</span></div>}
               </div>
+              <Waveform active={listening} volume={level} label={listening ? 'Mikrofonen registrerer lyd' : 'Mikrofonen er av'} />
             </div>
-          </div>
-          <div className="conversation-card">
-            <div className="conversation-head"><div><div className="eyebrow">DIREKTE SAMTALE</div><h2>Din samtale med Bjarne</h2></div><span className="round-status">{completed ? 'RUNDE FULLFØRT' : 'INGEN SAK OPPRETTET'}</span></div>
-            <div className="messages" ref={conversation} role="log" aria-live="polite" aria-label="Samtale">
-              <div className="intro-note"><span aria-hidden="true">ⓘ</span> Dette er et spill. Bruk bare oppdiktede skader og personer. Ingen virkelig skademelding sendes.</div>
-              {history.length === 0 && <div className="opening"><div className="opening-icon" aria-hidden="true">✳</div><h3>Her begynner historien din.</h3><p>Trykk på mikrofonen og fortell om en oppdiktet skade. For eksempel: «En drage tok med seg garasjen min.»</p></div>}
-              {history.map((turn, index) => <div key={index} className={`turn ${turn.role}`}><div className="turn-name">{turn.role === 'user' ? 'DU' : 'BJARNE'}</div><div className="bubble">{turn.content}</div></div>)}
-              {quest.isPending && <div className="turn assistant"><div className="turn-name">BJARNE</div><div className="bubble thinking"><span className="thinking-dots" aria-hidden="true">● ● ●</span> Sukk. Bjarne finner et nytt skjema …</div></div>}
             </div>
             <div className="composer">
               {speechError && <Alert color="red" title="Mikrofonen svarte ikke" mb="sm">{speechError}</Alert>}
@@ -264,6 +259,13 @@ export function QuestScreen() {
               </>}
             </div>
           </div>
+        </section>
+        <div className="intro-note demo-note"><span aria-hidden="true">ⓘ</span> Dette er et spill: Bruk bare oppdiktede skader og personer. Ingen virkelig skademelding sendes.</div>
+        <section className="metrics" aria-label="Fiktive nøkkeltall">
+          <div className="metric"><span className="metric-icon">☕</span><div><small>Kaffenivå</small><strong>{coffee}%</strong></div><span className="metric-note">KRITISK VIKTIG</span><div className="metric-meter"><i style={{ width: `${coffee}%` }} /></div></div>
+          <div className="metric"><span className="metric-icon">↗</span><div><small>Kollegaer reddet fra telefonkø</small><strong>{Math.floor(history.length / 2) + 3}</strong></div><span className="metric-note">I DAG, VISSTNOK</span></div>
+          <div className="metric"><span className="metric-icon">▤</span><div><small>Skjemaer utsatt</small><strong>{Math.floor(history.length / 2) + 12}</strong></div><span className="metric-note">EFFEKTIVISERING</span></div>
+          <div className="metric"><span className="metric-icon">◎</span><div><small>Risiko for faktisk arbeid</small><strong>{history.length ? '18' : '7'}<span className="metric-percent">%</span></strong></div><span className="metric-note">UNDER KONTROLL</span></div>
         </section>
         <footer><span>✳ Skadequest — helt fiktiv forsikring, helt ekte sukk.</span><span>INGEN VIRKELIGE SAKER OPPRETTES HER</span></footer>
       </div>
