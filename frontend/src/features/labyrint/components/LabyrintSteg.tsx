@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { Alert, Avatar, Badge, Button, Card, Group, Stack, Text, Timeline, Title } from "@mantine/core";
+import { Alert, Avatar, Badge, Button, Card, Group, SegmentedControl, Stack, Text, Timeline, Title } from "@mantine/core";
 import { Link, useParams, useSearch } from "@tanstack/react-router";
 import { useMoter } from "../api/labyrintApi";
 import { useLabyrint, useStegKommentar } from "../api/stegApi";
 import type { KryssValg, Stopp } from "../types";
 import { ikon } from "./ikoner";
 import { LabyrintKart } from "./LabyrintKart";
+import { LabyrintKart3D } from "./LabyrintKart3D";
 
 const venteReplikker = [
   "*sukk* … Bjarne vurderer valget ditt …",
@@ -25,6 +26,7 @@ export function LabyrintSteg() {
   const [kryssId, setKryssId] = useState<string | null>(null);
   const [sti, setSti] = useState<Stopp[]>([]);
   const [besokt, setBesokt] = useState<string[]>([]);
+  const [visning, setVisning] = useState<"3d" | "2d">("3d");
   const [vent, setVent] = useState(0);
 
   useEffect(() => {
@@ -73,6 +75,25 @@ export function LabyrintSteg() {
         <Badge size="lg" variant="light" color="kaffe">📍 Checkpoint {Math.min(besokt.length - 1, lab.antallLag)} av {lab.antallLag}</Badge>
       </Group>
 
+      <SegmentedControl
+        value={visning}
+        onChange={(v) => setVisning(v as "3d" | "2d")}
+        data={[{ label: "🧊 3D", value: "3d" }, { label: "🗺️ Kart", value: "2d" }]}
+        style={{ alignSelf: "flex-start" }}
+      />
+      {visning === "3d" ? (
+        <LabyrintKart3D
+          lab={lab}
+          rom={mote.rom}
+          besokt={besokt}
+          naa={kryssId}
+          lasert={kommentar.isPending}
+          onVelg={(tilId) => {
+            const v = kryss?.valg.find((x) => x.til === tilId);
+            if (v) velg(v);
+          }}
+        />
+      ) : (
       <LabyrintKart
         lab={lab}
         rom={mote.rom}
@@ -84,8 +105,9 @@ export function LabyrintSteg() {
           if (v) velg(v);
         }}
       />
+      )}
       <Text c="dimmed" fz="sm">
-        Klikk på et grønt checkpoint på kartet, eller velg under. Hold musa over et checkpoint for å se hva som er der.
+        Klikk på et grønt checkpoint, eller velg under. I 3D kan du dra for å snu kontoret og scrolle for å zoome.
       </Text>
 
       <Card withBorder shadow="lg" padding="lg" style={{ background: "#fffaf3" }}>
