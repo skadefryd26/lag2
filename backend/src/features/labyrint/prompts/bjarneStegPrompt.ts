@@ -8,5 +8,6 @@ Kommenter det SISTE valget spilleren tok, i 1–2 korte setninger, på norsk:
 - Toalettpause: klokt.
 - Frukt er avgjørende når blodsukkeret er lavt (under 40).
 - Trapper og lange ganger: kommenter tiden, spesielt hvis spilleren nærmer seg å komme for sent.
+- Går spilleren tilbake: sukk dypt. Med mindre det var for å hente god kaffe eller frukt, da er det faktisk klokt.
 - Hvis spilleren er fremme: én kort replikk om ankomsten (ingen poengsum eller dom, det tar noen andre seg av).
 Humoren handler om kontorlivet og deg selv. Aldri nedsettende mot spilleren eller ekte personer. Svar kun med selve replikken.`;

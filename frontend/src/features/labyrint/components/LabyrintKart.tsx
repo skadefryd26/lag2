@@ -1,5 +1,6 @@
 import type { Labyrint } from "../types";
 import { ikon } from "./ikoner";
+import { gatteKanter, kantNokkel, unikeKanter } from "./kanter";
 
 // Issue #7: tegner labyrinten som et kart med checkpoints og ganger.
 type Props = {
@@ -28,11 +29,8 @@ export function LabyrintKart({ lab, rom, besokt, naa, lasert, onVelg }: Props) {
   };
 
   const nesteIder = naa === "MAL" ? [] : [...new Set(lab.kryss[naa].valg.map((v) => v.til))];
-  const gattKant = new Set(besokt.slice(1).map((id, i) => `${besokt[i]}>${id}`));
-
-  const kanter = Object.values(lab.kryss).flatMap((k) =>
-    [...new Set(k.valg.map((v) => v.til))].map((til) => ({ fra: k.id, til })),
-  );
+  const gattKant = gatteKanter(besokt);
+  const kanter = unikeKanter(lab);
 
   return (
     <svg viewBox={`0 0 ${bredde} ${hoyde}`} style={{ width: "100%", background: "#fffaf3", borderRadius: 16, border: "1px solid #e3c19a" }}>
@@ -40,11 +38,11 @@ export function LabyrintKart({ lab, rom, besokt, naa, lasert, onVelg }: Props) {
       {kanter.map(({ fra, til }) => {
         const a = pos(fra);
         const b = pos(til);
-        const gatt = gattKant.has(`${fra}>${til}`);
-        const mulig = fra === naa;
+        const gatt = gattKant.has(kantNokkel(fra, til));
+        const mulig = (fra === naa && nesteIder.includes(til)) || (til === naa && nesteIder.includes(fra));
         return (
           <line
-            key={`${fra}>${til}`}
+            key={kantNokkel(fra, til)}
             x1={a.x} y1={a.y} x2={b.x} y2={b.y}
             stroke={gatt ? "#c07322" : mulig ? "#2f9e44" : "#e3d5c3"}
             strokeWidth={gatt ? 8 : mulig ? 5 : 4}

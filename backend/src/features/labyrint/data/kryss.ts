@@ -89,12 +89,15 @@ export function lagLabyrint(moteId: string): Labyrint {
     }
   }
 
-  const valgTil = (lag: number, bane: number): KryssValg[] => {
+  const resepsjon: Stopp = { type: "gang", navn: "Tilbake til resepsjonen", minutter: 1 };
+
+  const valgTil = (lag: number, bane: number, retning: "fram" | "tilbake"): KryssValg[] => {
+    if (lag === 0) return [{ tekst: "Tilbake til resepsjonen", stopp: resepsjon, til: "start", retning }];
     const ut: KryssValg[] = [];
     for (const b of [bane - 1, bane, bane + 1]) {
       if (b < 0 || b >= BANER) continue;
       const s = stoppFor[id(lag, b)];
-      ut.push({ tekst: s.navn, stopp: s, til: id(lag, b) });
+      ut.push({ tekst: retning === "tilbake" ? `Tilbake til ${s.navn}` : s.navn, stopp: s, til: id(lag, b), retning });
     }
     return ut;
   };
@@ -103,20 +106,22 @@ export function lagLabyrint(moteId: string): Labyrint {
   kryss.start = {
     id: "start", lag: 0, bane: midt,
     beskrivelse: `Du står i resepsjonen på ${mote.kontor}. Møtet «${mote.tittel}» er i ${mote.etasje}, rom ${mote.rom}.`,
-    valg: valgTil(1, midt),
+    valg: valgTil(1, midt, "fram"),
   };
 
+  // Alle ganger er toveis: man kan alltid gå tilbake dit man kom fra.
   for (let lag = 1; lag <= LAG; lag++) {
     for (let bane = 0; bane < BANER; bane++) {
       const s = stoppFor[id(lag, bane)];
-      const valg: KryssValg[] =
+      const fram: KryssValg[] =
         lag < LAG
-          ? valgTil(lag + 1, bane)
+          ? valgTil(lag + 1, bane, "fram")
           : [
-              { tekst: `Rett inn i ${mote.rom}`, stopp: { type: "gang", navn: `Døra til ${mote.rom}`, minutter: 1 }, til: "MAL" },
-              { tekst: "En siste toalettpause først", stopp: { type: "toalett", navn: "Toalettet rett ved møterommet", minutter: 2 }, til: "MAL" },
+              { tekst: `Rett inn i ${mote.rom}`, stopp: { type: "gang", navn: `Døra til ${mote.rom}`, minutter: 1 }, til: "MAL", retning: "fram" },
+              { tekst: "En siste toalettpause først", stopp: { type: "toalett", navn: "Toalettet rett ved møterommet", minutter: 2 }, til: "MAL", retning: "fram" },
             ];
-      kryss[id(lag, bane)] = { id: id(lag, bane), lag, bane, stopp: s, beskrivelse: beskriv(s), valg };
+      const tilbake = valgTil(lag - 1, bane, "tilbake");
+      kryss[id(lag, bane)] = { id: id(lag, bane), lag, bane, stopp: s, beskrivelse: beskriv(s), valg: [...fram, ...tilbake] };
     }
   }
 

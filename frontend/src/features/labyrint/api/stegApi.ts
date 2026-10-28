@@ -17,7 +17,7 @@ export function useLabyrint(moteId: string) {
 
 export function useStegKommentar() {
   return useMutation({
-    mutationFn: (args: { moteId: string; blodsukker: number; sti: Stopp[]; fremme: boolean }) =>
+    mutationFn: (args: { moteId: string; blodsukker: number; sti: Stopp[]; fremme: boolean; tilbake: boolean }) =>
       hentJson<{ kommentar: string }>("/api/bjarne/kommentar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
