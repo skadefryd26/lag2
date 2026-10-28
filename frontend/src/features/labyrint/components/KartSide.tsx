@@ -6,6 +6,8 @@ import type { Stopp } from "../types";
 import { BjarneRad } from "./BjarneRad";
 import { DomKort } from "./DomKort";
 import { Blodsukkerogtid } from "./Blodsukkerogtid";
+import { Blodsukkertips } from "./Blodsukkertips";
+import { beregnBlodsukker } from "../utils/blodsukker";
 
 const ikon: Record<Stopp["type"], string> = {
   trapp: "🪜",
@@ -22,12 +24,23 @@ export function KartSide() {
   const { data } = useMoter();
   const mote = data?.find((m) => m.id === moteId);
   const [valgt, setValgt] = useState<string | null>(null);
+  const [blodsukker, setBlodsukker] = useState(() =>
+    beregnBlodsukker(new Date().getHours(), new Date().getMinutes())
+  );
   const anbefaling = useAnbefaling();
   const dom = useDom();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (mote) anbefaling.mutate({ moteId: mote.id, blodsukker: 75 });
+    const interval = setInterval(() => {
+      const nu = new Date();
+      setBlodsukker(beregnBlodsukker(nu.getHours(), nu.getMinutes()));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (mote) anbefaling.mutate({ moteId: mote.id, blodsukker });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mote?.id]);
 
@@ -44,6 +57,8 @@ export function KartSide() {
       </Text>
 
       <Blodsukkerogtid møtetid={mote.tid} />
+
+      <Blodsukkertips blodsukker={blodsukker} />
 
       <BjarneRad laster={anbefaling.isPending} feil={anbefaling.error?.message} anbefaling={anbefaling.data} veier={mote.veier} />
 
