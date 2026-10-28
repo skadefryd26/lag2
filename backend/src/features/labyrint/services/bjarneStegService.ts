@@ -1,6 +1,7 @@
 import { sporGateway } from "../clients/aiGatewayClient.ts";
 import { bjarneStegPrompt } from "../prompts/bjarneStegPrompt.ts";
 import type { Labyrint, Mote, Stopp } from "../types/labyrint.ts";
+import { type Dialekt, ostfoldInstruks } from "./dialektService.ts";
 
 export function lagStegInput(mote: Mote, blodsukker: number, sti: Stopp[], fremme: boolean, tilbake = false): string {
   const brukt = sti.reduce((s, x) => s + x.minutter, 0);
@@ -14,8 +15,9 @@ Siste valg: ${siste.navn} [${siste.type}, ${siste.minutter} min]${tilbake ? " �
 ${fremme ? "Spilleren er nå fremme i møterommet." : "Spilleren er ikke fremme ennå."}`;
 }
 
-export async function hentStegKommentar(mote: Mote, blodsukker: number, sti: Stopp[], fremme: boolean, tilbake = false): Promise<string> {
-  const tekst = await sporGateway(bjarneStegPrompt, lagStegInput(mote, blodsukker, sti, fremme, tilbake));
+export async function hentStegKommentar(mote: Mote, blodsukker: number, sti: Stopp[], fremme: boolean, tilbake = false, dialekt: Dialekt = "bokmal"): Promise<string> {
+  const prompt = bjarneStegPrompt + (dialekt === "ostfold" ? ostfoldInstruks : "");
+  const tekst = await sporGateway(prompt, lagStegInput(mote, blodsukker, sti, fremme, tilbake));
   return tekst.trim() || "*sukk*";
 }
 
@@ -25,7 +27,7 @@ En prosessutvikler står i resepsjonen og skal gjennom kontorlabyrinten til et m
 - Si noe om tiden de har.
 Aldri nedsettende mot spilleren. Svar kun med selve rådet.`;
 
-export async function hentStartRad(mote: Mote, lab: Labyrint, blodsukker: number): Promise<string> {
+export async function hentStartRad(mote: Mote, lab: Labyrint, blodsukker: number, dialekt: Dialekt = "bokmal"): Promise<string> {
   const kolonner = Array.from({ length: lab.antallLag }, (_, i) => i + 1)
     .map((lag) => {
       const her = Object.values(lab.kryss).filter((k) => k.lag === lag && k.stopp);
@@ -36,6 +38,6 @@ export async function hentStartRad(mote: Mote, lab: Labyrint, blodsukker: number
 Blodsukker: ${blodsukker}/100.
 Labyrinten:
 ${kolonner}`;
-  const tekst = await sporGateway(startPrompt, input);
+  const tekst = await sporGateway(startPrompt + (dialekt === "ostfold" ? ostfoldInstruks : ""), input);
   return tekst.trim() || "*sukk* Bare gå. Jeg følger med.";
 }

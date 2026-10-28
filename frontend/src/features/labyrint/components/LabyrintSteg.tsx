@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Alert, Avatar, Badge, Button, Card, Group, Kbd, SegmentedControl, Stack, Text, Timeline, Title } from "@mantine/core";
 import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { useMoter } from "../api/labyrintApi";
-import { useDomLabyrint, useLabyrint, useStartRad, useStegKommentar } from "../api/stegApi";
+import { type Dialekt, useDomLabyrint, useLabyrint, useStartRad, useStegKommentar } from "../api/stegApi";
 import { beregnBlodsukker } from "../utils/blodsukker";
 import { Blodsukkerogtid } from "./Blodsukkerogtid";
 import { Blodsukkertips } from "./Blodsukkertips";
@@ -31,8 +31,9 @@ export function LabyrintSteg() {
   );
   const mote = useMoter().data?.find((m) => m.id === moteId);
   const { data: lab, error } = useLabyrint(moteId);
+  const [dialekt, setDialekt] = useState<Dialekt>(() => (localStorage.getItem("bjarne-dialekt") === "bokmal" ? "bokmal" : "ostfold"));
   const kommentar = useStegKommentar();
-  const startRad = useStartRad(moteId, blodsukker);
+  const startRad = useStartRad(moteId, blodsukker, dialekt);
   const dom = useDomLabyrint();
   const navigate = useNavigate();
 
@@ -121,8 +122,8 @@ export function LabyrintSteg() {
     setSti(nySti);
     setBesokt([...besokt, v.til]);
     setKryssId(v.til);
-    kommentar.mutate({ moteId, blodsukker, sti: nySti, fremme: v.til === "MAL", tilbake: v.retning === "tilbake" });
-    if (v.til === "MAL") dom.mutate({ moteId, sti: nySti });
+    kommentar.mutate({ moteId, blodsukker, sti: nySti, fremme: v.til === "MAL", tilbake: v.retning === "tilbake", dialekt });
+    if (v.til === "MAL") dom.mutate({ moteId, sti: nySti, dialekt });
   }
 
   function startPaNytt() {
@@ -210,6 +211,16 @@ export function LabyrintSteg() {
           <div style={{ flex: 1 }}>
             <Group justify="space-between" mb={4}>
               <Text fw={700} ff="Fredoka">Bjarne{stemme.snakker ? " 🗣️" : ""}</Text>
+              <SegmentedControl
+                size="xs"
+                value={dialekt}
+                onChange={(v) => {
+                  setDialekt(v as Dialekt);
+                  localStorage.setItem("bjarne-dialekt", v);
+                }}
+                data={[{ label: "Østfoldsk", value: "ostfold" }, { label: "Bokmål", value: "bokmal" }]}
+                aria-label="Bjarnes språk"
+              />
             </Group>
             <StemmeKontroll
               stottet={stemme.stottet}

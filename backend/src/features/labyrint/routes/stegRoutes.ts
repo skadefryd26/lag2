@@ -3,6 +3,7 @@ import { moter } from "../data/moter.ts";
 import { hentLabyrint } from "../data/kryss.ts";
 import { hentStegKommentar, hentStartRad } from "../services/bjarneStegService.ts";
 import { hentDom } from "../services/domService.ts";
+import { omskrivTilOstfold, tilDialekt } from "../services/dialektService.ts";
 import { GatewayFeil } from "../clients/aiGatewayClient.ts";
 import type { KommentarRequest, Labyrint, Stopp, Vei } from "../types/labyrint.ts";
 
@@ -34,7 +35,7 @@ stegRouter.post("/bjarne/kommentar", async (req, res) => {
   }
   const blodsukker = Math.max(0, Math.min(100, Number(body.blodsukker ?? 50)));
   try {
-    const kommentar = await hentStegKommentar(mote, blodsukker, body.sti, Boolean(body.fremme), Boolean(body.tilbake));
+    const kommentar = await hentStegKommentar(mote, blodsukker, body.sti, Boolean(body.fremme), Boolean(body.tilbake), tilDialekt(req.body?.dialekt));
     res.json({ kommentar });
   } catch (e) {
     feilsvar(res, e);
@@ -52,7 +53,7 @@ stegRouter.post("/bjarne/startrad", async (req, res) => {
   }
   const blodsukker = Math.max(0, Math.min(100, Number(body.blodsukker ?? 50)));
   try {
-    res.json({ kommentar: await hentStartRad(mote, lab, blodsukker) });
+    res.json({ kommentar: await hentStartRad(mote, lab, blodsukker, tilDialekt(req.body?.dialekt)) });
   } catch (e) {
     feilsvar(res, e);
   }
@@ -92,7 +93,9 @@ stegRouter.post("/bjarne/dom-labyrint", async (req, res) => {
   const din: Vei = { id: "din", navn: "Din vei gjennom labyrinten", stopp: body.sti };
   const raskest: Vei = { id: "raskest", navn: "Bjarnes vei", stopp: raskesteSti(lab) };
   try {
-    res.json(await hentDom({ ...mote, veier: [din, raskest] }, din));
+    const dom = await hentDom({ ...mote, veier: [din, raskest] }, din);
+    if (tilDialekt(req.body?.dialekt) === "ostfold") dom.dom = await omskrivTilOstfold(dom.dom);
+    res.json(dom);
   } catch (e) {
     feilsvar(res, e);
   }
