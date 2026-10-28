@@ -13,4 +13,4 @@ export type Mote = {
   veier: Vei[];
 };
 export type Anbefaling = { anbefaltVeiId: string; begrunnelse: string; poeng: Record<string, number> };
-export type Dom = { poeng: number; kaffebarometer: number; dom: string; detaljer: string[] };
+export type Dom = { poeng: number; effektivitet: number; dom: string; detaljer: string[] };

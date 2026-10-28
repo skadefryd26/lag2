@@ -1,17 +1,17 @@
-import { Alert, Badge, Button, Card, Group, Progress, Stack, Text, Title } from "@mantine/core";
+import { Alert, Badge, Card, Group, Progress, Stack, Text, Title } from "@mantine/core";
 import type { Dom } from "../types";
 
-function barometerFarge(verdi: number): string {
+function malerFarge(verdi: number): string {
   if (verdi >= 70) return "green";
   if (verdi >= 40) return "yellow";
   return "red";
 }
 
-function barometerTekst(verdi: number): string {
-  if (verdi >= 85) return "Kaffepausen er rettmessig fortjent. Bjarne nikker motvillig.";
-  if (verdi >= 60) return "Nesten verdig en kaffe. Bjarne vurderer å dele.";
-  if (verdi >= 35) return "Langt unna en kaffe. Bjarne drikker din i stedet.";
-  return "Ingen kaffe til deg. Bjarne er skuffet helt inn i bønnene.";
+function malerTekst(verdi: number): string {
+  if (verdi >= 85) return "Lynrask. Bjarne nikker motvillig — du fant nesten fram like bra som han ville gjort.";
+  if (verdi >= 60) return "Ganske effektivt. Bjarne hadde klart det raskere, men han sier det ikke høyt. Jo, det gjorde han.";
+  if (verdi >= 35) return "Treigt. Bjarne rakk to kaffekopper mens du lette.";
+  return "Katastrofalt ineffektivt. Bjarne vurderer å sende deg kart. På papir.";
 }
 
 export function DomKort({
@@ -30,8 +30,7 @@ export function DomKort({
       <Group justify="space-between" mb="xs">
         <Title order={4}>⚖️ Bjarnes dom over «{veiNavn}»</Title>
         {dom && (
-          <Badge size="lg" color={dom.poeng >= 0 ? "green" : "red"}>
-            {dom.poeng >= 0 ? "+" : ""}
+          <Badge size="lg" color={dom.poeng >= 60 ? "green" : dom.poeng > 0 ? "orange" : "red"}>
             {dom.poeng} poeng
           </Badge>
         )}
@@ -46,12 +45,12 @@ export function DomKort({
 
           <div>
             <Group justify="space-between" mb={4}>
-              <Text fw={600}>☕ Kaffebarometer</Text>
-              <Text fw={700}>{dom.kaffebarometer}/100</Text>
+              <Text fw={600}>🏃 Effektivitetsmåler</Text>
+              <Text fw={700}>{dom.effektivitet}/100</Text>
             </Group>
-            <Progress value={dom.kaffebarometer} color={barometerFarge(dom.kaffebarometer)} size="xl" radius="xl" />
+            <Progress value={dom.effektivitet} color={malerFarge(dom.effektivitet)} size="xl" radius="xl" />
             <Text size="sm" c="dimmed" mt={4}>
-              {barometerTekst(dom.kaffebarometer)}
+              {malerTekst(dom.effektivitet)}
             </Text>
           </div>
 

@@ -25,7 +25,7 @@ export function useAnbefaling() {
 
 export function useDom() {
   return useMutation({
-    mutationFn: (args: { moteId: string; veiId: string; blodsukker: number; bjarnesVeiId?: string }) =>
+    mutationFn: (args: { moteId: string; veiId: string }) =>
       hentJson<Dom>("/api/bjarne/dom", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

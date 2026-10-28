@@ -41,9 +41,8 @@ labyrintRouter.post("/bjarne/dom", async (req, res) => {
     res.status(400).json({ feil: "Ukjent vei. Bjarne lurer på hvor du egentlig gikk." });
     return;
   }
-  const blodsukker = Math.max(0, Math.min(100, Number(body.blodsukker ?? 50)));
   try {
-    res.json(await hentDom(mote, vei, blodsukker, body.bjarnesVeiId));
+    res.json(await hentDom(mote, vei));
   } catch (e) {
     const status = e instanceof GatewayFeil ? e.status : 502;
     const melding = e instanceof Error ? e.message : "Ukjent feil";

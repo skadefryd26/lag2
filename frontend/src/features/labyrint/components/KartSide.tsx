@@ -110,7 +110,7 @@ export function KartSide() {
           color="kaffe"
           loading={dom.isPending}
           onClick={() =>
-            dom.mutate({ moteId: mote.id, veiId: valgt, blodsukker, bjarnesVeiId: anbefalt })
+            dom.mutate({ moteId: mote.id, veiId: valgt })
           }
         >
           🏁 Jeg kom fram — la Bjarne felle dommen
