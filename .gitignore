@@ -19,3 +19,6 @@ sjekk-appen.png
 
 # Mellomsteget lagark.py lager før PDF-en
 arrangor/lagark/lagark.html
+
+# Lokal logg fra dev-serveren
+*.log
