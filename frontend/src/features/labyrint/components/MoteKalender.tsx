@@ -17,7 +17,7 @@ export function MoteKalender() {
         {data!.map((m) => (
           <Card
             key={m.id}
-            onClick={() => navigate({ to: "/mote/$moteId", params: { moteId: m.id } })}
+            onClick={() => navigate({ to: "/mote/$moteId/steg", params: { moteId: m.id }, search: {} })}
             shadow="md"
             padding="lg"
             withBorder

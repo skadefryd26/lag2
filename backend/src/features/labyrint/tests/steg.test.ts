@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { labyrinter } from "../data/kryss.ts";
 import { moter } from "../data/moter.ts";
 import { lagStegInput } from "../services/bjarneStegService.ts";
+import { raskesteSti } from "../routes/stegRoutes.ts";
 
 test("hvert møte har en labyrint", () => {
   for (const m of moter) assert.ok(labyrinter.some((l) => l.moteId === m.id), m.id);
@@ -36,6 +37,10 @@ test("alle ganger er toveis", () => {
 
 test("labyrinten har minst fem checkpoints på veien", () => {
   for (const l of labyrinter) assert.ok(l.antallLag >= 5);
+});
+
+test("raskeste sti går helt fram til møterommet", () => {
+  for (const l of labyrinter) assert.equal(raskesteSti(l).length, l.antallLag + 1, l.moteId);
 });
 
 test("steg-input sier fra når spilleren er for sent", () => {

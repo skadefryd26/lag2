@@ -1,8 +1,12 @@
 import { useEffect, useState } from "react";
 import { Alert, Avatar, Badge, Button, Card, Group, SegmentedControl, Stack, Text, Timeline, Title } from "@mantine/core";
-import { Link, useParams, useSearch } from "@tanstack/react-router";
+import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { useMoter } from "../api/labyrintApi";
-import { useLabyrint, useStegKommentar } from "../api/stegApi";
+import { useDomLabyrint, useLabyrint, useStartRad, useStegKommentar } from "../api/stegApi";
+import { beregnBlodsukker } from "../utils/blodsukker";
+import { Blodsukkerogtid } from "./Blodsukkerogtid";
+import { Blodsukkertips } from "./Blodsukkertips";
+import { DomKort } from "./DomKort";
 import type { KryssValg, Stopp } from "../types";
 import { ikon } from "./ikoner";
 import { LabyrintKart } from "./LabyrintKart";
@@ -18,10 +22,17 @@ const venteReplikker = [
 // Issue #7: labyrinten steg for steg, med en Bjarne-kommentar etter hvert valg.
 export function LabyrintSteg() {
   const { moteId } = useParams({ from: "/mote/$moteId/steg" });
-  const { blodsukker } = useSearch({ from: "/mote/$moteId/steg" });
+  const search = useSearch({ from: "/mote/$moteId/steg" });
+  // Blodsukkeret følger klokka (#5), med mindre det er sendt med i adressen
+  const [blodsukker] = useState(() =>
+    Math.round(search.blodsukker ?? beregnBlodsukker(new Date().getHours(), new Date().getMinutes())),
+  );
   const mote = useMoter().data?.find((m) => m.id === moteId);
   const { data: lab, error } = useLabyrint(moteId);
   const kommentar = useStegKommentar();
+  const startRad = useStartRad(moteId, blodsukker);
+  const dom = useDomLabyrint();
+  const navigate = useNavigate();
 
   const [kryssId, setKryssId] = useState<string | null>(null);
   const [sti, setSti] = useState<Stopp[]>([]);
@@ -56,6 +67,7 @@ export function LabyrintSteg() {
     setBesokt([...besokt, v.til]);
     setKryssId(v.til);
     kommentar.mutate({ moteId, blodsukker, sti: nySti, fremme: v.til === "MAL", tilbake: v.retning === "tilbake" });
+    if (v.til === "MAL") dom.mutate({ moteId, sti: nySti });
   }
 
   function startPaNytt() {
@@ -63,12 +75,18 @@ export function LabyrintSteg() {
     setBesokt([lab!.start]);
     setKryssId(lab!.start);
     kommentar.reset();
+    dom.reset();
   }
 
   return (
     <Stack>
-      <Link to="/mote/$moteId" params={{ moteId }} style={{ color: "#a85f14", textDecoration: "none" }}>← Tilbake til kartet</Link>
-      <Title order={3}>🧭 Steg for steg til «{mote.rom}»</Title>
+      <Link to="/" style={{ color: "#a85f14", textDecoration: "none" }}>← Tilbake til møtekalenderen</Link>
+      <Title order={3}>🧭 Veien til «{mote.rom}»</Title>
+      <Text c="dimmed">
+        {mote.tittel} · {mote.kontor}, {mote.etasje} · kl. {mote.tid}
+      </Text>
+      <Blodsukkerogtid møtetid={mote.tid} />
+      <Blodsukkertips blodsukker={blodsukker} />
       <Group gap="xs">
         <Badge size="lg" color={forSent ? "red" : "green"}>⏱️ {brukt} av {mote.minutterIgjen} min brukt</Badge>
         <Badge size="lg" variant="light" color={blodsukker < 40 ? "red" : "green"}>🩸 Blodsukker {blodsukker}</Badge>
@@ -123,7 +141,11 @@ export function LabyrintSteg() {
               <Text className="dukk-opp" key={sti.length}>{kommentar.data.kommentar}</Text>
             )}
             {!kommentar.data && !kommentar.isPending && !kommentar.error && (
-              <Text c="dimmed">*sukk* Velg en vei, så skal jeg si hva jeg mener om den.</Text>
+              startRad.isPending ? (
+                <Text c="dimmed" fs="italic">*sukk* … Bjarne studerer labyrinten for deg …</Text>
+              ) : (
+                <Text className="dukk-opp">{startRad.data?.kommentar ?? "*sukk* Velg en vei, så skal jeg si hva jeg mener om den."}</Text>
+              )
             )}
           </div>
         </Group>
@@ -154,8 +176,15 @@ export function LabyrintSteg() {
       {fremme && (
         <Alert color={forSent ? "red" : "green"} title="Du er fremme!" className="dukk-opp">
           Du kom fram til «{mote.rom}» etter {brukt} minutter{forSent ? `, ${brukt - mote.minutterIgjen} min for sent` : ", i tide"}.
-          <Button mt="sm" variant="white" onClick={startPaNytt}>Gå labyrinten på nytt</Button>
+          <Group mt="sm">
+            <Button variant="white" onClick={startPaNytt}>Gå labyrinten på nytt</Button>
+            <Button color="kaffe" onClick={() => navigate({ to: "/" })}>📅 Velg et nytt møte</Button>
+          </Group>
         </Alert>
+      )}
+
+      {fremme && (dom.isPending || dom.data || dom.error) && (
+        <DomKort laster={dom.isPending} feil={dom.error?.message} dom={dom.data} veiNavn="Din vei gjennom labyrinten" />
       )}
 
       {sti.length > 0 && (
