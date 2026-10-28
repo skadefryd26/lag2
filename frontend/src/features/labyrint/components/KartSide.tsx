@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Alert, Anchor, Badge, Button, Card, Group, Slider, Stack, Text, Title } from "@mantine/core";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
-import { useAnbefaling, useMoter } from "../api/labyrintApi";
+import { useAnbefaling, useDom, useMoter } from "../api/labyrintApi";
 import type { Stopp } from "../types";
 import { BjarneRad } from "./BjarneRad";
+import { DomKort } from "./DomKort";
 
 const ikon: Record<Stopp["type"], string> = {
   trapp: "🪜",
@@ -22,6 +23,7 @@ export function KartSide() {
   const [blodsukker, setBlodsukker] = useState(35);
   const [valgt, setValgt] = useState<string | null>(null);
   const anbefaling = useAnbefaling();
+  const dom = useDom();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -69,7 +71,10 @@ export function KartSide() {
               withBorder
               shadow={valgt === v.id ? "xl" : "xs"}
               padding="md"
-              onClick={() => setValgt(v.id)}
+              onClick={() => {
+                setValgt(v.id);
+                dom.reset();
+              }}
               style={{
                 cursor: "pointer",
                 borderWidth: valgt === v.id || erAnbefalt ? 3 : 1,
@@ -105,6 +110,28 @@ export function KartSide() {
             ? "Du valgte Bjarnes vei. Han later som han ikke bryr seg, men han er fornøyd."
             : "Du valgte en annen vei enn Bjarne. Han noterer seg det. I en mappe. Med ditt navn."}
         </Alert>
+      )}
+
+      {valgt && (
+        <Button
+          size="md"
+          color="kaffe"
+          loading={dom.isPending}
+          onClick={() =>
+            dom.mutate({ moteId: mote.id, veiId: valgt })
+          }
+        >
+          🏁 Jeg kom fram — la Bjarne felle dommen
+        </Button>
+      )}
+
+      {valgt && (dom.isPending || dom.data || dom.error) && (
+        <DomKort
+          laster={dom.isPending}
+          feil={dom.error?.message}
+          dom={dom.data}
+          veiNavn={mote.veier.find((v) => v.id === valgt)?.navn ?? ""}
+        />
       )}
     </Stack>
   );

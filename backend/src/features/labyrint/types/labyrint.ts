@@ -29,6 +29,15 @@ export type Anbefaling = {
   poeng: Record<string, number>;
 };
 
+export type DomRequest = { moteId: string; veiId: string };
+
+export type Dom = {
+  poeng: number;
+  effektivitet: number; // 0–100: hvor nær den raskeste mulige reisen du var
+  dom: string; // Bjarnes dom, starter med et sukk
+  detaljer: string[]; // kulepunkter: hva som ga og tok poeng
+};
+
 export type Feil = { feil: string };
 
 // Steg-for-steg-labyrint (#7)

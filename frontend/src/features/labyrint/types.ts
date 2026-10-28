@@ -13,6 +13,7 @@ export type Mote = {
   veier: Vei[];
 };
 export type Anbefaling = { anbefaltVeiId: string; begrunnelse: string; poeng: Record<string, number> };
+export type Dom = { poeng: number; effektivitet: number; dom: string; detaljer: string[] };
 
 // Steg-for-steg (#7)
 export type KryssValg = { tekst: string; stopp: Stopp; til: string };
