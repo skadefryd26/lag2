@@ -29,4 +29,13 @@ export type Anbefaling = {
   poeng: Record<string, number>;
 };
 
+export type DomRequest = { moteId: string; veiId: string; blodsukker: number; bjarnesVeiId?: string };
+
+export type Dom = {
+  poeng: number;
+  kaffebarometer: number; // 0–100: hvor nær du var å fortjene kaffepausen din
+  dom: string; // Bjarnes dom, starter med et sukk
+  detaljer: string[]; // kulepunkter: hva som ga og tok poeng
+};
+
 export type Feil = { feil: string };

@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import type { Anbefaling, Mote } from "../types";
+import type { Anbefaling, Dom, Mote } from "../types";
 
 async function hentJson<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, init);
@@ -16,6 +16,17 @@ export function useAnbefaling() {
   return useMutation({
     mutationFn: (args: { moteId: string; blodsukker: number }) =>
       hentJson<Anbefaling>("/api/bjarne/anbefaling", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(args),
+      }),
+  });
+}
+
+export function useDom() {
+  return useMutation({
+    mutationFn: (args: { moteId: string; veiId: string; blodsukker: number; bjarnesVeiId?: string }) =>
+      hentJson<Dom>("/api/bjarne/dom", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(args),
