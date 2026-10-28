@@ -1,6 +1,8 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type { Dom, Labyrint, Stopp } from "../types";
 
+export type Dialekt = "ostfold" | "bokmal";
+
 async function hentJson<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, init);
   const data = await res.json().catch(() => ({}));
@@ -15,14 +17,14 @@ export function useLabyrint(moteId: string) {
   });
 }
 
-export function useStartRad(moteId: string, blodsukker: number) {
+export function useStartRad(moteId: string, blodsukker: number, dialekt: Dialekt) {
   return useQuery({
-    queryKey: ["startrad", moteId],
+    queryKey: ["startrad", moteId, dialekt],
     queryFn: () =>
       hentJson<{ kommentar: string }>("/api/bjarne/startrad", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ moteId, blodsukker }),
+        body: JSON.stringify({ moteId, blodsukker, dialekt }),
       }),
     staleTime: Infinity,
     retry: false,
@@ -31,7 +33,7 @@ export function useStartRad(moteId: string, blodsukker: number) {
 
 export function useDomLabyrint() {
   return useMutation({
-    mutationFn: (args: { moteId: string; sti: Stopp[] }) =>
+    mutationFn: (args: { moteId: string; sti: Stopp[]; dialekt: Dialekt }) =>
       hentJson<Dom>("/api/bjarne/dom-labyrint", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -42,7 +44,7 @@ export function useDomLabyrint() {
 
 export function useStegKommentar() {
   return useMutation({
-    mutationFn: (args: { moteId: string; blodsukker: number; sti: Stopp[]; fremme: boolean; tilbake: boolean }) =>
+    mutationFn: (args: { moteId: string; blodsukker: number; sti: Stopp[]; fremme: boolean; tilbake: boolean; dialekt: Dialekt }) =>
       hentJson<{ kommentar: string }>("/api/bjarne/kommentar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
