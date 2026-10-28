@@ -22,3 +22,6 @@ arrangor/lagark/lagark.html
 
 # Lokal logg fra dev-serveren
 *.log
+
+# Vite-cache
+.vite/
