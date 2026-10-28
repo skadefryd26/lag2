@@ -5,6 +5,7 @@ import { useMoter } from "../api/labyrintApi";
 import { useLabyrint, useStegKommentar } from "../api/stegApi";
 import type { KryssValg, Stopp } from "../types";
 import { ikon } from "./ikoner";
+import { LabyrintKart } from "./LabyrintKart";
 
 const venteReplikker = [
   "*sukk* … Bjarne vurderer valget ditt …",
@@ -23,10 +24,14 @@ export function LabyrintSteg() {
 
   const [kryssId, setKryssId] = useState<string | null>(null);
   const [sti, setSti] = useState<Stopp[]>([]);
+  const [besokt, setBesokt] = useState<string[]>([]);
   const [vent, setVent] = useState(0);
 
   useEffect(() => {
-    if (lab && kryssId === null) setKryssId(lab.start);
+    if (lab && kryssId === null) {
+      setKryssId(lab.start);
+      setBesokt([lab.start]);
+    }
   }, [lab, kryssId]);
 
   useEffect(() => {
@@ -46,12 +51,14 @@ export function LabyrintSteg() {
   function velg(v: KryssValg) {
     const nySti = [...sti, v.stopp];
     setSti(nySti);
+    setBesokt([...besokt, v.til]);
     setKryssId(v.til);
     kommentar.mutate({ moteId, blodsukker, sti: nySti, fremme: v.til === "MAL" });
   }
 
   function startPaNytt() {
     setSti([]);
+    setBesokt([lab!.start]);
     setKryssId(lab!.start);
     kommentar.reset();
   }
@@ -63,7 +70,23 @@ export function LabyrintSteg() {
       <Group gap="xs">
         <Badge size="lg" color={forSent ? "red" : "green"}>⏱️ {brukt} av {mote.minutterIgjen} min brukt</Badge>
         <Badge size="lg" variant="light" color={blodsukker < 40 ? "red" : "green"}>🩸 Blodsukker {blodsukker}</Badge>
+        <Badge size="lg" variant="light" color="kaffe">📍 Checkpoint {Math.min(besokt.length - 1, lab.antallLag)} av {lab.antallLag}</Badge>
       </Group>
+
+      <LabyrintKart
+        lab={lab}
+        rom={mote.rom}
+        besokt={besokt}
+        naa={kryssId}
+        lasert={kommentar.isPending}
+        onVelg={(tilId) => {
+          const v = kryss?.valg.find((x) => x.til === tilId);
+          if (v) velg(v);
+        }}
+      />
+      <Text c="dimmed" fz="sm">
+        Klikk på et grønt checkpoint på kartet, eller velg under. Hold musa over et checkpoint for å se hva som er der.
+      </Text>
 
       <Card withBorder shadow="lg" padding="lg" style={{ background: "#fffaf3" }}>
         <Group align="flex-start" wrap="nowrap">
@@ -88,8 +111,8 @@ export function LabyrintSteg() {
         <Card withBorder padding="lg" className="dukk-opp" key={kryss.id}>
           <Text fw={600} mb="sm">📍 {kryss.beskrivelse}</Text>
           <Group>
-            {kryss.valg.map((v) => (
-              <Button key={v.tekst} size="md" variant="light" disabled={kommentar.isPending} onClick={() => velg(v)}>
+            {kryss.valg.map((v, i) => (
+              <Button key={`${v.til}-${i}`} size="md" variant="light" disabled={kommentar.isPending} onClick={() => velg(v)}>
                 {ikon[v.stopp.type]} {v.tekst} ({v.stopp.minutter} min)
               </Button>
             ))}
