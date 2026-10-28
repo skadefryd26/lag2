@@ -4,6 +4,7 @@ import { Link, useParams } from "@tanstack/react-router";
 import { useAnbefaling, useMoter } from "../api/labyrintApi";
 import type { Stopp } from "../types";
 import { BjarneRad } from "./BjarneRad";
+import { Blodsukkerogtid } from "./Blodsukkerogtid";
 
 const ikon: Record<Stopp["type"], string> = {
   trapp: "🪜",
@@ -19,12 +20,11 @@ export function KartSide() {
   const { moteId } = useParams({ from: "/mote/$moteId" });
   const { data } = useMoter();
   const mote = data?.find((m) => m.id === moteId);
-  const [blodsukker, setBlodsukker] = useState(35);
   const [valgt, setValgt] = useState<string | null>(null);
   const anbefaling = useAnbefaling();
 
   useEffect(() => {
-    if (mote) anbefaling.mutate({ moteId: mote.id, blodsukker });
+    if (mote) anbefaling.mutate({ moteId: mote.id, blodsukker: 75 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mote?.id]);
 
@@ -37,16 +37,10 @@ export function KartSide() {
       <Anchor component={Link} to="/">← Tilbake til kalenderen</Anchor>
       <Title order={3}>🗺️ Veien til «{mote.rom}»</Title>
       <Text c="dimmed">
-        {mote.tittel} · {mote.kontor}, {mote.etasje} · kl. {mote.tid} · {mote.minutterIgjen} min igjen
+        {mote.tittel} · {mote.kontor}, {mote.etasje} · kl. {mote.tid}
       </Text>
 
-      <Card withBorder padding="md">
-        <Text fw={600} mb={4}>🩸 Blodsukkeret ditt: {blodsukker}/100</Text>
-        <Slider value={blodsukker} onChange={setBlodsukker} color={blodsukker < 40 ? "red" : "green"} />
-        <Button mt="sm" variant="light" onClick={() => anbefaling.mutate({ moteId: mote.id, blodsukker })}>
-          Spør Bjarne på nytt
-        </Button>
-      </Card>
+      <Blodsukkerogtid møtetid={mote.tid} />
 
       <BjarneRad laster={anbefaling.isPending} feil={anbefaling.error?.message} anbefaling={anbefaling.data} veier={mote.veier} />
 
