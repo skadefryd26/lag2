@@ -26,7 +26,7 @@ stegRouter.post("/bjarne/kommentar", async (req, res) => {
   }
   const blodsukker = Math.max(0, Math.min(100, Number(body.blodsukker ?? 50)));
   try {
-    const kommentar = await hentStegKommentar(mote, blodsukker, body.sti, Boolean(body.fremme));
+    const kommentar = await hentStegKommentar(mote, blodsukker, body.sti, Boolean(body.fremme), Boolean(body.tilbake));
     res.json({ kommentar });
   } catch (e) {
     const status = e instanceof GatewayFeil ? e.status : 502;

@@ -23,6 +23,17 @@ test("hvert checkpoint har minst to valg", () => {
   }
 });
 
+test("alle ganger er toveis", () => {
+  for (const l of labyrinter) {
+    for (const k of Object.values(l.kryss)) {
+      for (const v of k.valg) {
+        if (v.til === "MAL") continue;
+        assert.ok(l.kryss[v.til].valg.some((x) => x.til === k.id), `${l.moteId}: ${k.id} ↔ ${v.til}`);
+      }
+    }
+  }
+});
+
 test("labyrinten har minst fem checkpoints på veien", () => {
   for (const l of labyrinter) assert.ok(l.antallLag >= 5);
 });

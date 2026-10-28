@@ -3,6 +3,7 @@ import { Canvas, useFrame, type ThreeEvent } from "@react-three/fiber";
 import { ContactShadows, Html, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import type { Labyrint, StoppType } from "../types";
+import { gatteKanter, kantNokkel, unikeKanter } from "./kanter";
 
 // Issue #12: labyrinten som et lite 3D-kontor. Figuren går mellom checkpointene.
 type Props = {
@@ -256,12 +257,8 @@ function Scene({ lab, rom, besokt, naa, lasert, onVelg }: Props) {
   const [hover, setHover] = useState<string | null>(null);
 
   const nesteIder = naa === "MAL" ? [] : [...new Set(lab.kryss[naa].valg.map((v) => v.til))];
-  const gattKant = new Set(besokt.slice(1).map((id, i) => `${besokt[i]}>${id}`));
-
-  const kanter = useMemo(
-    () => Object.values(lab.kryss).flatMap((k) => [...new Set(k.valg.map((v) => v.til))].map((til) => ({ fra: k.id, til }))),
-    [lab],
-  );
+  const gattKant = gatteKanter(besokt);
+  const kanter = useMemo(() => unikeKanter(lab), [lab]);
 
   const bredde = (lab.antallLag + 2) * AVSTAND_X;
   const dybde = lab.antallBaner * AVSTAND_Z + 2;
@@ -296,10 +293,10 @@ function Scene({ lab, rom, besokt, naa, lasert, onVelg }: Props) {
         const midtP = a.clone().add(b).multiplyScalar(0.5);
         const lengde = a.distanceTo(b);
         const vinkel = Math.atan2(b.z - a.z, b.x - a.x);
-        const gatt = gattKant.has(`${fra}>${til}`);
-        const mulig = fra === naa;
+        const gatt = gattKant.has(kantNokkel(fra, til));
+        const mulig = (fra === naa && nesteIder.includes(til)) || (til === naa && nesteIder.includes(fra));
         return (
-          <mesh key={`${fra}>${til}`} position={[midtP.x, 0.02 + (gatt ? 0.01 : 0), midtP.z]} rotation={[-Math.PI / 2, 0, -vinkel]} receiveShadow>
+          <mesh key={kantNokkel(fra, til)} position={[midtP.x, 0.02 + (gatt ? 0.01 : 0), midtP.z]} rotation={[-Math.PI / 2, 0, -vinkel]} receiveShadow>
             <planeGeometry args={[lengde, gatt ? 0.55 : mulig ? 0.45 : 0.3]} />
             <meshStandardMaterial
               color={gatt ? farge.gatt : mulig ? farge.mulig : farge.gang}
@@ -336,14 +333,14 @@ function Scene({ lab, rom, besokt, naa, lasert, onVelg }: Props) {
             <group scale={kanVelges || hover === k.id ? 1.1 : 1}>
               <Modell type={k.stopp?.type} />
             </group>
-            {(hover === k.id || kanVelges) && k.stopp && (
+            {(hover === k.id || kanVelges) && (
               <Html position={[0, 2.3, 0]} center distanceFactor={12} zIndexRange={[20, 0]}>
                 <div style={{
                   background: kanVelges ? "#2f9e44" : "#fffaf3", color: kanVelges ? "white" : "#542d06",
                   padding: "4px 10px", borderRadius: 10, fontSize: 14, fontWeight: 600, whiteSpace: "nowrap",
                   boxShadow: "0 2px 8px rgba(0,0,0,.2)", pointerEvents: "none",
                 }}>
-                  {k.stopp.navn} · {k.stopp.minutter} min
+                  {k.stopp ? `${k.stopp.navn} · ${k.stopp.minutter} min` : "Resepsjonen"}
                 </div>
               </Html>
             )}

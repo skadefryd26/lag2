@@ -15,6 +15,6 @@ export type Mote = {
 export type Anbefaling = { anbefaltVeiId: string; begrunnelse: string; poeng: Record<string, number> };
 
 // Steg-for-steg (#7)
-export type KryssValg = { tekst: string; stopp: Stopp; til: string };
+export type KryssValg = { tekst: string; stopp: Stopp; til: string; retning: "fram" | "tilbake" };
 export type Kryss = { id: string; lag: number; bane: number; stopp?: Stopp; beskrivelse: string; valg: KryssValg[] };
 export type Labyrint = { moteId: string; start: string; antallLag: number; antallBaner: number; kryss: Record<string, Kryss> };

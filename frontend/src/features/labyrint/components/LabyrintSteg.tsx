@@ -55,7 +55,7 @@ export function LabyrintSteg() {
     setSti(nySti);
     setBesokt([...besokt, v.til]);
     setKryssId(v.til);
-    kommentar.mutate({ moteId, blodsukker, sti: nySti, fremme: v.til === "MAL" });
+    kommentar.mutate({ moteId, blodsukker, sti: nySti, fremme: v.til === "MAL", tilbake: v.retning === "tilbake" });
   }
 
   function startPaNytt() {
@@ -72,7 +72,7 @@ export function LabyrintSteg() {
       <Group gap="xs">
         <Badge size="lg" color={forSent ? "red" : "green"}>⏱️ {brukt} av {mote.minutterIgjen} min brukt</Badge>
         <Badge size="lg" variant="light" color={blodsukker < 40 ? "red" : "green"}>🩸 Blodsukker {blodsukker}</Badge>
-        <Badge size="lg" variant="light" color="kaffe">📍 Checkpoint {Math.min(besokt.length - 1, lab.antallLag)} av {lab.antallLag}</Badge>
+        <Badge size="lg" variant="light" color="kaffe">📍 Checkpoint {kryss ? kryss.lag : lab.antallLag} av {lab.antallLag}</Badge>
       </Group>
 
       <SegmentedControl
@@ -132,10 +132,19 @@ export function LabyrintSteg() {
       {kryss && (
         <Card withBorder padding="lg" className="dukk-opp" key={kryss.id}>
           <Text fw={600} mb="sm">📍 {kryss.beskrivelse}</Text>
-          <Group>
-            {kryss.valg.map((v, i) => (
+          <Text fz="sm" c="dimmed" mb={4}>Videre</Text>
+          <Group mb="sm">
+            {kryss.valg.filter((v) => v.retning === "fram").map((v, i) => (
               <Button key={`${v.til}-${i}`} size="md" variant="light" disabled={kommentar.isPending} onClick={() => velg(v)}>
                 {ikon[v.stopp.type]} {v.tekst} ({v.stopp.minutter} min)
+              </Button>
+            ))}
+          </Group>
+          {kryss.valg.some((v) => v.retning === "tilbake") && <Text fz="sm" c="dimmed" mb={4}>Tilbake</Text>}
+          <Group>
+            {kryss.valg.filter((v) => v.retning === "tilbake").map((v, i) => (
+              <Button key={`${v.til}-t${i}`} size="sm" variant="subtle" color="gray" disabled={kommentar.isPending} onClick={() => velg(v)}>
+                ↩ {ikon[v.stopp.type]} {v.tekst} ({v.stopp.minutter} min)
               </Button>
             ))}
           </Group>
