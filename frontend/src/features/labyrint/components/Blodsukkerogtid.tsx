@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Card, Group, Text, Progress, Stack, Box } from "@mantine/core";
+import { Card, Group, Text, Progress, Stack, Box, Slider } from "@mantine/core";
 import { beregnBlodsukker, beregnNedtaelling, erBlodsukkertKritisktLavt } from "../utils/blodsukker";
 
 interface BlodsukkerogtidProps {
@@ -9,12 +9,16 @@ interface BlodsukkerogtidProps {
 export function Blodsukkerogtid({ møtetid }: BlodsukkerogtidProps) {
   const [time, setTime] = useState(new Date().getHours());
   const [minut, setMinut] = useState(new Date().getMinutes());
-  const [blodsukker, setBlodsukker] = useState(() =>
+  const [blodsukkerAuto, setBlodsukkerAuto] = useState(() =>
     beregnBlodsukker(new Date().getHours(), new Date().getMinutes())
   );
+  const [blodsukkerManuel, setBlodsukkerManuel] = useState<number | null>(null);
   const [nedtaelling, setNedtaelling] = useState(() =>
     beregnNedtaelling(møtetid, new Date().getHours(), new Date().getMinutes())
   );
+
+  // Bruk manuel verdi hvis den er satt, ellers auto
+  const blodsukker = blodsukkerManuel !== null ? blodsukkerManuel : blodsukkerAuto;
 
   // Opdater tiden og værdierne hvert sekund
   useEffect(() => {
@@ -25,7 +29,7 @@ export function Blodsukkerogtid({ møtetid }: BlodsukkerogtidProps) {
 
       setTime(h);
       setMinut(m);
-      setBlodsukker(beregnBlodsukker(h, m));
+      setBlodsukkerAuto(beregnBlodsukker(h, m));
       setNedtaelling(beregnNedtaelling(møtetid, h, m));
     }, 1000);
 
@@ -128,6 +132,44 @@ export function Blodsukkerogtid({ møtetid }: BlodsukkerogtidProps) {
                 </Text>
               </Box>
             </Box>
+          </Box>
+
+          {/* Manuel blodsukker-slider for testing */}
+          <Box mt="md" p="sm" style={{ backgroundColor: "rgba(0,0,0,0.05)", borderRadius: 6 }}>
+            <Text size="xs" c="dimmed" mb={6}>
+              🎮 Test: Juster blodsukker manuelt
+            </Text>
+            <Slider
+              value={blodsukker}
+              onChange={setBlodsukkerManuel}
+              min={0}
+              max={100}
+              step={1}
+              marks={[
+                { value: 0, label: "0" },
+                { value: 30, label: "Kritisk" },
+                { value: 50, label: "Lavt" },
+                { value: 70, label: "Godt" },
+                { value: 100, label: "100" },
+              ]}
+              label={(value) => `${Math.round(value)}`}
+            />
+            {blodsukkerManuel !== null && (
+              <Text size="xs" c="dimmed" mt={4}>
+                💡 Tip: Klik på barren for å gå tilbake til automatisk
+              </Text>
+            )}
+            {blodsukkerManuel !== null && (
+              <Text
+                size="xs"
+                c="blue"
+                style={{ cursor: "pointer", textDecoration: "underline" }}
+                onClick={() => setBlodsukkerManuel(null)}
+                mt={4}
+              >
+                ↻ Tilbake til automatisk beregning
+              </Text>
+            )}
           </Box>
         </div>
       </Stack>
