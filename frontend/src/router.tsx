@@ -40,7 +40,8 @@ export const moteRoute = createRoute({
 export const stegRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/mote/$moteId/steg",
-  validateSearch: (s: Record<string, unknown>) => ({ blodsukker: Number(s.blodsukker ?? 50) }),
+  validateSearch: (s: Record<string, unknown>): { blodsukker?: number } =>
+    s.blodsukker === undefined ? {} : { blodsukker: Number(s.blodsukker) },
   component: LabyrintSteg,
 });
 

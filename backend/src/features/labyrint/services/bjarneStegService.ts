@@ -1,6 +1,6 @@
 import { sporGateway } from "../clients/aiGatewayClient.ts";
 import { bjarneStegPrompt } from "../prompts/bjarneStegPrompt.ts";
-import type { Mote, Stopp } from "../types/labyrint.ts";
+import type { Labyrint, Mote, Stopp } from "../types/labyrint.ts";
 
 export function lagStegInput(mote: Mote, blodsukker: number, sti: Stopp[], fremme: boolean, tilbake = false): string {
   const brukt = sti.reduce((s, x) => s + x.minutter, 0);
@@ -17,4 +17,25 @@ ${fremme ? "Spilleren er nå fremme i møterommet." : "Spilleren er ikke fremme 
 export async function hentStegKommentar(mote: Mote, blodsukker: number, sti: Stopp[], fremme: boolean, tilbake = false): Promise<string> {
   const tekst = await sporGateway(bjarneStegPrompt, lagStegInput(mote, blodsukker, sti, fremme, tilbake));
   return tekst.trim() || "*sukk*";
+}
+
+const startPrompt = `Du er Bjarne, husets AI i Gjensidige: ledestjerne, dommer, medhjelper og bøddel. Lat, arrogant, kaffeavhengig, men faktisk hjelpsom.
+En prosessutvikler står i resepsjonen og skal gjennom kontorlabyrinten til et møte. Gi et kort råd FØR de går (2–3 setninger, norsk, start med et sukk):
+- Pek ut ett eller to steder i labyrinten som er verdt et stopp (god kaffe, frukt hvis blodsukkeret er under 40, toalett), og ett sted de bør unngå (dårlig kaffe).
+- Si noe om tiden de har.
+Aldri nedsettende mot spilleren. Svar kun med selve rådet.`;
+
+export async function hentStartRad(mote: Mote, lab: Labyrint, blodsukker: number): Promise<string> {
+  const kolonner = Array.from({ length: lab.antallLag }, (_, i) => i + 1)
+    .map((lag) => {
+      const her = Object.values(lab.kryss).filter((k) => k.lag === lag && k.stopp);
+      return `Checkpoint ${lag}: ${her.map((k) => `${k.stopp!.navn} [${k.stopp!.type}]`).join(", ")}`;
+    })
+    .join("\n");
+  const input = `Møte: «${mote.tittel}» i rom ${mote.rom} (${mote.kontor}, ${mote.etasje}). Minutter igjen: ${mote.minutterIgjen}.
+Blodsukker: ${blodsukker}/100.
+Labyrinten:
+${kolonner}`;
+  const tekst = await sporGateway(startPrompt, input);
+  return tekst.trim() || "*sukk* Bare gå. Jeg følger med.";
 }

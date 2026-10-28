@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import type { Labyrint, Stopp } from "../types";
+import type { Dom, Labyrint, Stopp } from "../types";
 
 async function hentJson<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, init);
@@ -12,6 +12,31 @@ export function useLabyrint(moteId: string) {
   return useQuery({
     queryKey: ["labyrint", moteId],
     queryFn: () => hentJson<Labyrint>(`/api/labyrint/${moteId}`),
+  });
+}
+
+export function useStartRad(moteId: string, blodsukker: number) {
+  return useQuery({
+    queryKey: ["startrad", moteId],
+    queryFn: () =>
+      hentJson<{ kommentar: string }>("/api/bjarne/startrad", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ moteId, blodsukker }),
+      }),
+    staleTime: Infinity,
+    retry: false,
+  });
+}
+
+export function useDomLabyrint() {
+  return useMutation({
+    mutationFn: (args: { moteId: string; sti: Stopp[] }) =>
+      hentJson<Dom>("/api/bjarne/dom-labyrint", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(args),
+      }),
   });
 }
 
