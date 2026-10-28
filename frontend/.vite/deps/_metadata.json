@@ -1,0 +1,55 @@
+{
+  "hash": "ce9ea3ae",
+  "configHash": "379e5f67",
+  "lockfileHash": "6e5d8bed",
+  "browserHash": "37ef9bc7",
+  "optimized": {
+    "react/jsx-dev-runtime": {
+      "src": "../../../node_modules/react/jsx-dev-runtime.js",
+      "file": "react_jsx-dev-runtime.js",
+      "fileHash": "b3091724",
+      "needsInterop": true
+    },
+    "react": {
+      "src": "../../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "82d1252a",
+      "needsInterop": true
+    },
+    "react-dom/client": {
+      "src": "../../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "44e6913a",
+      "needsInterop": true
+    },
+    "@mantine/core": {
+      "src": "../../../node_modules/@mantine/core/esm/index.mjs",
+      "file": "@mantine_core.js",
+      "fileHash": "73b513d5",
+      "needsInterop": false
+    },
+    "@tanstack/react-query": {
+      "src": "../../../node_modules/@tanstack/react-query/build/modern/index.js",
+      "file": "@tanstack_react-query.js",
+      "fileHash": "686cd359",
+      "needsInterop": false
+    },
+    "@tanstack/react-router": {
+      "src": "../../../node_modules/@tanstack/react-router/dist/esm/index.dev.js",
+      "file": "@tanstack_react-router.js",
+      "fileHash": "64c66897",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-GQG3PO2N": {
+      "file": "chunk-GQG3PO2N.js"
+    },
+    "chunk-3PLGVX2H": {
+      "file": "chunk-3PLGVX2H.js"
+    },
+    "chunk-OHFZIKLL": {
+      "file": "chunk-OHFZIKLL.js"
+    }
+  }
+}

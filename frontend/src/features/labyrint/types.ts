@@ -13,3 +13,8 @@ export type Mote = {
   veier: Vei[];
 };
 export type Anbefaling = { anbefaltVeiId: string; begrunnelse: string; poeng: Record<string, number> };
+
+// Steg-for-steg (#7)
+export type KryssValg = { tekst: string; stopp: Stopp; til: string };
+export type Kryss = { id: string; beskrivelse: string; valg: KryssValg[] };
+export type Labyrint = { moteId: string; start: string; kryss: Record<string, Kryss> };

@@ -7,6 +7,7 @@ import {
 import { Container, Group, Text, Title } from "@mantine/core";
 import { MoteKalender } from "./features/labyrint/components/MoteKalender";
 import { KartSide } from "./features/labyrint/components/KartSide";
+import { LabyrintSteg } from "./features/labyrint/components/LabyrintSteg";
 
 const rootRoute = createRootRoute({
   component: () => (
@@ -35,8 +36,16 @@ export const moteRoute = createRoute({
   component: KartSide,
 });
 
+// Issue #7: steg-for-steg-labyrinten
+export const stegRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/mote/$moteId/steg",
+  validateSearch: (s: Record<string, unknown>) => ({ blodsukker: Number(s.blodsukker ?? 50) }),
+  component: LabyrintSteg,
+});
+
 export const router = createRouter({
-  routeTree: rootRoute.addChildren([kalenderRoute, moteRoute]),
+  routeTree: rootRoute.addChildren([kalenderRoute, moteRoute, stegRoute]),
 });
 
 declare module "@tanstack/react-router" {
