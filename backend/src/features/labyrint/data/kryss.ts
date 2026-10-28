@@ -11,12 +11,25 @@ const BANER = 3;
 
 const navn: Record<StoppType, string[]> = {
   trapp: ["Spiraltrappa", "Branntrappa", "Den glemte trappa", "Hovedtrappa (64 trinn)", "Trappa som bare går halvveis"],
-  gang: ["Glassgangen", "Gangen med plantene ingen vanner", "Korridoren med motivasjonsplakater", "Gangen gjennom IT-avdelingen", "Den lange gangen forbi lageret", "Kjellergangen med blinkende lysrør"],
+  gang: [
+    "Gangen (rommet, ikke gangen)",
+    "Gjennom Stua",
+    "Forbi Kjøkkenet",
+    "Tvers over Brygga",
+    "Bak Uthuset",
+    "Gjennom Vindfanget",
+    "Forbi Badstua",
+    "Gangen mellom Stabburet og Låven",
+    "Gjennom Gapahuken",
+    "Forbi Sjøbua",
+    "Rundt Fjøset",
+    "Gjennom Bryggerhuset",
+  ],
   heis: ["Heis C (treg)", "Vareheisen", "Heisen som alltid stopper i 4.", "Glassheisen"],
-  "kaffe-god": ["Barista-automaten «Espresso Forte»", "Automaten «Bønnebaronen»", "Kaffehjørnet med ekte melk"],
-  "kaffe-darlig": ["Automaten som bare lager varmt vann", "Kaffeautomaten «Gråsonen»", "Automaten med ukjent innhold"],
-  frukt: ["Fruktskåla i kantina", "Kantina (bananer og et tvilsomt eple)", "Fruktkurven på kjøkkenet"],
-  toalett: ["Toalettet som alltid er ledig", "Toalettet ved garderoben", "Toalettet med kø"],
+  "kaffe-god": ["Barista-automaten i Peisestua", "Kaffetrakteren på Kjøkkenet", "Espressomaskinen i Bryggerhuset"],
+  "kaffe-darlig": ["Automaten i Vaskerommet som bare lager varmt vann", "Kokekaffen i Naustet fra i går", "Automaten i Kjelleren med ukjent innhold"],
+  frukt: ["Fruktskåla i Spiskammerset", "Kantina i Storstua (bananer og et tvilsomt eple)", "Epletreet i Hagestua"],
+  toalett: ["Utedoen (innendørs, heldigvis)", "Badet ved Gjesterommet", "Toalettet ved Vindfanget, med kø"],
 };
 
 const minutter: Record<StoppType, number> = {
@@ -48,7 +61,7 @@ function beskriv(stopp: Stopp): string {
     case "toalett": return `${stopp.navn}. En sjelden mulighet.`;
     case "heis": return `${stopp.navn}. Dørene lukker seg nesten.`;
     case "trapp": return `${stopp.navn}. Knærne dine protesterer.`;
-    default: return `${stopp.navn}. Du er ikke helt sikker på hvor du er.`;
+    default: return `${stopp.navn}. Du er på jobb, men det føles som feil hytte.`;
   }
 }
 
@@ -60,10 +73,19 @@ export function lagLabyrint(moteId: string): Labyrint {
   // Hvert checkpoint får et stopp som er det man møter når man kommer dit.
   const stoppFor: Record<string, Stopp> = {};
   for (let lag = 1; lag <= LAG; lag++) {
+    const brukt = new Set<string>();
     for (let bane = 0; bane < BANER; bane++) {
-      const type = typer[Math.floor(r() * typer.length)];
-      const liste = navn[type];
-      stoppFor[id(lag, bane)] = { type, navn: liste[Math.floor(r() * liste.length)], minutter: minutter[type] };
+      // Unngå samme sted to ganger i samme kolonne
+      let type: StoppType;
+      let n: string;
+      let forsok = 0;
+      do {
+        type = typer[Math.floor(r() * typer.length)];
+        const liste = navn[type];
+        n = liste[Math.floor(r() * liste.length)];
+      } while (brukt.has(n) && ++forsok < 20);
+      brukt.add(n);
+      stoppFor[id(lag, bane)] = { type, navn: n, minutter: minutter[type] };
     }
   }
 
