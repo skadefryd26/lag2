@@ -39,3 +39,16 @@ export type Dom = {
 };
 
 export type Feil = { feil: string };
+
+// Steg-for-steg-labyrint (#7)
+export type KryssValg = { tekst: string; stopp: Stopp; til: string }; // til = kryss-id eller "MAL"
+export type Kryss = { id: string; lag: number; bane: number; stopp?: Stopp; beskrivelse: string; valg: KryssValg[] };
+export type Labyrint = { moteId: string; start: string; antallLag: number; antallBaner: number; kryss: Record<string, Kryss> };
+
+export type KommentarRequest = {
+  moteId: string;
+  blodsukker: number;
+  sti: Stopp[]; // alle valg så langt, siste til slutt
+  fremme: boolean;
+};
+export type Kommentar = { kommentar: string };

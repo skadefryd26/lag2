@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Alert, Anchor, Badge, Button, Card, Group, Slider, Stack, Text, Title } from "@mantine/core";
-import { Link, useParams } from "@tanstack/react-router";
+import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useAnbefaling, useDom, useMoter } from "../api/labyrintApi";
 import type { Stopp } from "../types";
 import { BjarneRad } from "./BjarneRad";
@@ -24,6 +24,7 @@ export function KartSide() {
   const [valgt, setValgt] = useState<string | null>(null);
   const anbefaling = useAnbefaling();
   const dom = useDom();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (mote) anbefaling.mutate({ moteId: mote.id, blodsukker });
@@ -51,6 +52,13 @@ export function KartSide() {
       </Card>
 
       <BjarneRad laster={anbefaling.isPending} feil={anbefaling.error?.message} anbefaling={anbefaling.data} veier={mote.veier} />
+
+      <Button
+        size="lg"
+        onClick={() => navigate({ to: "/mote/$moteId/steg", params: { moteId: mote.id }, search: { blodsukker } })}
+      >
+        🧭 Gå steg for steg gjennom labyrinten
+      </Button>
 
       <Stack gap="sm">
         {mote.veier.map((v) => {

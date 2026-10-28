@@ -8,8 +8,8 @@ export const moter: Mote[] = [
     tid: "09:00",
     kontor: "Kontor Fjellvik",
     etasje: "3. etasje",
-    rom: "Kaffeslabberasen",
-    minutterIgjen: 6,
+    rom: "Barnerommet",
+    minutterIgjen: 10,
     veier: [
       {
         id: "a",
@@ -44,8 +44,8 @@ export const moter: Mote[] = [
     tid: "10:30",
     kontor: "Kontor Havbukta",
     etasje: "5. etasje",
-    rom: "Labyrinten",
-    minutterIgjen: 10,
+    rom: "Naustet",
+    minutterIgjen: 12,
     veier: [
       {
         id: "a",
@@ -81,8 +81,8 @@ export const moter: Mote[] = [
     tid: "13:00",
     kontor: "Kontor Lillesund",
     etasje: "1. etasje",
-    rom: "Kjelleren (heter fortsatt «Utsikten»)",
-    minutterIgjen: 4,
+    rom: "Landstedet (i kjelleren)",
+    minutterIgjen: 8,
     veier: [
       {
         id: "a",
@@ -106,8 +106,8 @@ export const moter: Mote[] = [
     tid: "15:00",
     kontor: "Kontor Fjellvik",
     etasje: "7. etasje",
-    rom: "Toppen",
-    minutterIgjen: 8,
+    rom: "Hytta",
+    minutterIgjen: 11,
     veier: [
       {
         id: "a",
