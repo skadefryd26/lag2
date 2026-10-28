@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { leggTilMote, moter } from "../data/moter.ts";
+import { finnLokale, leggTilBooking } from "../data/lokaler.ts";
 import { hentAnbefaling } from "../services/bjarneService.ts";
 import { hentDom } from "../services/domService.ts";
 import { GatewayFeil } from "../clients/aiGatewayClient.ts";
@@ -14,21 +15,40 @@ labyrintRouter.get("/moter", (_req, res) => {
 labyrintRouter.post("/moter", (req, res) => {
   const body = req.body as Record<string, unknown>;
   const tittel = String(body.tittel ?? "").trim();
-  const rom = String(body.rom ?? "").trim();
+  const tid = String(body.tid ?? "").trim() || "12:00";
+  const lokaleId = typeof body.lokaleId === "string" && body.lokaleId ? body.lokaleId : null;
+  const lokale = lokaleId ? finnLokale(lokaleId) : undefined;
+  const rom = String(body.rom ?? "").trim() || lokale?.navn || "";
   if (!tittel || !rom) {
     res.status(400).json({ feil: "Bjarne krever i det minste et møte og et rom. Ellers er det bare en følelse." });
+    return;
+  }
+  if (lokaleId && !lokale) {
+    res.status(400).json({ feil: "Det lokalet finnes ikke. Bjarne sjekket. Nøye." });
+    return;
+  }
+  if (lokaleId && !leggTilBooking(lokaleId, tid, leggTilMinutter(tid, 30), tittel)) {
+    res.status(409).json({ feil: "Lokalet er opptatt i det tidsrommet. Bjarne foreslår et annet rom, eller en annen tid." });
     return;
   }
   const mote = leggTilMote({
     tittel,
     rom,
-    tid: String(body.tid ?? "").trim() || "12:00",
-    kontor: String(body.kontor ?? "").trim() || "Kontor Fjellvik",
-    etasje: String(body.etasje ?? "").trim() || "3. etasje",
+    tid,
+    kontor: String(body.kontor ?? "").trim() || lokale?.kontor || "Kontor Fjellvik",
+    etasje: String(body.etasje ?? "").trim() || lokale?.etasje || "3. etasje",
     minutterIgjen: Math.max(0, Math.min(120, Number(body.minutterIgjen ?? 10))),
   });
   res.status(201).json(mote);
 });
+
+function leggTilMinutter(tid: string, antall: number): string {
+  const [timer, minutter] = tid.split(":").map(Number);
+  const total = (timer || 0) * 60 + (minutter || 0) + antall;
+  const nyTimer = Math.floor((total % (24 * 60)) / 60);
+  const nyMinutter = total % 60;
+  return `${String(nyTimer).padStart(2, "0")}:${String(nyMinutter).padStart(2, "0")}`;
+}
 
 labyrintRouter.post("/bjarne/anbefaling", async (req, res) => {
   const body = req.body as Partial<AnbefalingRequest>;

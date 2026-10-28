@@ -19,6 +19,7 @@ export type NyttMote = {
   etasje: string;
   rom: string;
   minutterIgjen: number;
+  lokaleId?: string;
 };
 
 export function useLeggTilMote() {
@@ -30,7 +31,10 @@ export function useLeggTilMote() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(mote),
       }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["moter"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["moter"] });
+      queryClient.invalidateQueries({ queryKey: ["lokaler"] });
+    },
   });
 }
 
