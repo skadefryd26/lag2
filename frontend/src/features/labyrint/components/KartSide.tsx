@@ -64,7 +64,7 @@ export function KartSide() {
 
       <Button
         size="lg"
-        onClick={() => navigate({ to: "/mote/$moteId/steg", params: { moteId: mote.id }, search: { blodsukker } })}
+        onClick={() => navigate({ to: "/mote/$moteId/steg", params: { moteId: mote.id }, search: { blodsukker: 75 } })}
       >
         🧭 Gå steg for steg gjennom labyrinten
       </Button>

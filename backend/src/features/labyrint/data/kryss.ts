@@ -129,3 +129,10 @@ export function lagLabyrint(moteId: string): Labyrint {
 }
 
 export const labyrinter: Labyrint[] = moter.map((m) => lagLabyrint(m.id));
+
+export function hentLabyrint(moteId: string): Labyrint | undefined {
+  const laget = labyrinter.find((l) => l.moteId === moteId);
+  if (laget) return laget;
+  if (!moter.some((m) => m.id === moteId)) return undefined;
+  return lagLabyrint(moteId);
+}

@@ -1,6 +1,7 @@
 import { Badge, Card, Group, Loader, SimpleGrid, Stack, Text, Title } from "@mantine/core";
 import { useNavigate } from "@tanstack/react-router";
 import { useMoter } from "../api/labyrintApi";
+import { NyttMote } from "./NyttMote";
 
 export function MoteKalender() {
   const { data, isLoading, error } = useMoter();
@@ -36,6 +37,7 @@ export function MoteKalender() {
           </Card>
         ))}
       </SimpleGrid>
+      <NyttMote />
     </Stack>
   );
 }

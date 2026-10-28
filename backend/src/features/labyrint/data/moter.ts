@@ -1,4 +1,4 @@
-import type { Mote } from "../types/labyrint.ts";
+import type { Mote, Vei } from "../types/labyrint.ts";
 
 // Alt her er oppdiktet: kontorer, rom og møter.
 export const moter: Mote[] = [
@@ -137,3 +137,24 @@ export const moter: Mote[] = [
     ],
   },
 ];
+
+export type NyttMoteInput = {
+  tittel: string;
+  tid: string;
+  kontor: string;
+  etasje: string;
+  rom: string;
+  minutterIgjen: number;
+};
+
+function veierFor(tittel: string): Vei[] {
+  const sum = [...tittel].reduce((s, c) => s + c.charCodeAt(0), 0);
+  return structuredClone(moter[sum % moter.length].veier);
+}
+
+export function leggTilMote(input: NyttMoteInput): Mote {
+  const id = `x${moter.length + 1}-${Math.random().toString(36).slice(2, 6)}`;
+  const mote: Mote = { id, ...input, veier: veierFor(input.tittel) };
+  moter.push(mote);
+  return mote;
+}

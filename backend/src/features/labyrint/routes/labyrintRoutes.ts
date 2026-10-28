@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { moter } from "../data/moter.ts";
+import { leggTilMote, moter } from "../data/moter.ts";
 import { hentAnbefaling } from "../services/bjarneService.ts";
 import { hentDom } from "../services/domService.ts";
 import { GatewayFeil } from "../clients/aiGatewayClient.ts";
@@ -9,6 +9,25 @@ export const labyrintRouter = Router();
 
 labyrintRouter.get("/moter", (_req, res) => {
   res.json(moter);
+});
+
+labyrintRouter.post("/moter", (req, res) => {
+  const body = req.body as Record<string, unknown>;
+  const tittel = String(body.tittel ?? "").trim();
+  const rom = String(body.rom ?? "").trim();
+  if (!tittel || !rom) {
+    res.status(400).json({ feil: "Bjarne krever i det minste et møte og et rom. Ellers er det bare en følelse." });
+    return;
+  }
+  const mote = leggTilMote({
+    tittel,
+    rom,
+    tid: String(body.tid ?? "").trim() || "12:00",
+    kontor: String(body.kontor ?? "").trim() || "Kontor Fjellvik",
+    etasje: String(body.etasje ?? "").trim() || "3. etasje",
+    minutterIgjen: Math.max(0, Math.min(120, Number(body.minutterIgjen ?? 10))),
+  });
+  res.status(201).json(mote);
 });
 
 labyrintRouter.post("/bjarne/anbefaling", async (req, res) => {

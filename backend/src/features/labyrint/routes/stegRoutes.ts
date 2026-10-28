@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { moter } from "../data/moter.ts";
-import { labyrinter } from "../data/kryss.ts";
+import { hentLabyrint } from "../data/kryss.ts";
 import { hentStegKommentar } from "../services/bjarneStegService.ts";
 import { GatewayFeil } from "../clients/aiGatewayClient.ts";
 import type { KommentarRequest } from "../types/labyrint.ts";
@@ -9,7 +9,7 @@ import type { KommentarRequest } from "../types/labyrint.ts";
 export const stegRouter = Router();
 
 stegRouter.get("/labyrint/:moteId", (req, res) => {
-  const lab = labyrinter.find((l) => l.moteId === req.params.moteId);
+  const lab = hentLabyrint(req.params.moteId);
   if (!lab) {
     res.status(404).json({ feil: "Dette møtet har ingen labyrint. Bjarne anbefaler å bli hjemme." });
     return;

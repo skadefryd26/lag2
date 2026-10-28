@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Anbefaling, Dom, Mote } from "../types";
 
 async function hentJson<T>(url: string, init?: RequestInit): Promise<T> {
@@ -10,6 +10,28 @@ async function hentJson<T>(url: string, init?: RequestInit): Promise<T> {
 
 export function useMoter() {
   return useQuery({ queryKey: ["moter"], queryFn: () => hentJson<Mote[]>("/api/moter") });
+}
+
+export type NyttMote = {
+  tittel: string;
+  tid: string;
+  kontor: string;
+  etasje: string;
+  rom: string;
+  minutterIgjen: number;
+};
+
+export function useLeggTilMote() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (mote: NyttMote) =>
+      hentJson<Mote>("/api/moter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(mote),
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["moter"] }),
+  });
 }
 
 export function useAnbefaling() {
