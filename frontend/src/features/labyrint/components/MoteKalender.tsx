@@ -19,6 +19,15 @@ export function MoteKalender() {
           <Card
             key={m.id}
             onClick={() => navigate({ to: "/mote/$moteId/steg", params: { moteId: m.id }, search: {} })}
+            role="button"
+            tabIndex={0}
+            aria-label={`Møte kl. ${m.tid}: ${m.tittel}, ${m.kontor}, ${m.etasje}, rom ${m.rom}. Trykk Enter for å gå til labyrinten.`}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                navigate({ to: "/mote/$moteId/steg", params: { moteId: m.id }, search: {} });
+              }
+            }}
             shadow="md"
             padding="lg"
             withBorder
