@@ -1,0 +1,22 @@
+body {
+  background: radial-gradient(circle at 20% 0%, #fdf1e2 0%, #f3dcc0 45%, #e2b98b 100%);
+  min-height: 100vh;
+}
+
+@keyframes sukk {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  50% { transform: translateY(-4px) rotate(-3deg); }
+}
+
+.bjarne-tenker {
+  animation: sukk 1.4s ease-in-out infinite;
+}
+
+@keyframes inn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.dukk-opp {
+  animation: inn 0.5s ease-out both;
+}
